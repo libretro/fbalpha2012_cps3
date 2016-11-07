@@ -48,7 +48,7 @@ GRIFFIN_DIR = griffin-libretro
 
 EXTERNAL_ZLIB = 0
 
-TARGET_NAME := fbalpha2012
+TARGET_NAME := fbalpha2012_cps3
 
 ifeq ($(platform), unix)
    TARGET := $(TARGET_NAME)_libretro.so
@@ -435,7 +435,7 @@ FBA_SRC_DIRS += $(FBA_LIB_DIRS)
 endif
 
 SOURCES_CXX := $(GRIFFIN_CXXSRCFILES) $(filter-out $(BURN_BLACKLIST),$(foreach dir,$(FBA_SRC_DIRS),$(wildcard $(dir)/*.cpp)))
-SOURCES_CXX += $(LIBRETRO_DIR)/libretro.cpp $(LIBRETRO_DIR)/neocdlist.cpp
+SOURCES_CXX += $(LIBRETRO_DIR)/libretro.cpp
 FBA_CXXOBJ := $(SOURCES_CXX:.cpp=.o)
 SOURCES_C := $(filter-out $(BURN_BLACKLIST),$(foreach dir,$(FBA_SRC_DIRS),$(wildcard $(dir)/*.c)))
 FBA_COBJ := $(SOURCES_C:.c=.o)
