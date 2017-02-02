@@ -6,7 +6,7 @@
 
 #include "cd/cd_interface.h"
 
-#define FBA_VERSION "v0.2.97.30" // Sept 16, 2013 (SVN)
+#define FBA_VERSION "v0.2.97.29" // Sept 16, 2013 (SVN)
 
 static retro_environment_t environ_cb;
 static retro_log_printf_t log_cb;
@@ -74,7 +74,7 @@ static bool driver_inited;
 
 void retro_get_system_info(struct retro_system_info *info)
 {
-   info->library_name = "FB Alpha 2012 CPS3";
+   info->library_name = "FB Alpha 2012 CPS-3";
    info->library_version = FBA_VERSION;
    info->need_fullpath = true;
    info->block_extract = true;
