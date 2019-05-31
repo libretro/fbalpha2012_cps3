@@ -629,14 +629,12 @@ generate-files:
 	@$(CC) -c -o $@ $< $(CFLAGS) $(INCFLAGS)
 
 $(TARGET): $(OBJS)
-	@echo "** BUILDING $(TARGET) FOR PLATFORM $(platform) **"
 	@echo "LD $@"
 ifeq ($(STATIC_LINKING), 1)
 	@$(AR) rcs $@ $(OBJS)
 else
 	@$(CXX) -o $@ $(SHARED) $(OBJS) $(LDFLAGS)
 endif
-	@echo "** BUILD SUCCESSFUL! GG NO RE **"
 
 clean-objs:
 	rm -f $(OBJS)
