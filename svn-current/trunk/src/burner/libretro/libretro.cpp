@@ -10,6 +10,19 @@
 
 #define CORE_OPTION_NAME "fbalpha2012_cps3"
 
+#ifdef WII_VM
+#include <unistd.h> // sleep
+#include <dirent.h>
+#include "wii_vm.h"
+#include "wii_progressbar.h"
+
+bool CreateCache = false;
+FILE *BurnCacheFile;
+char CacheDir[1024];
+char ParentName[1024];
+unsigned int CacheSize;
+#endif
+
 #if defined(_XBOX) || defined(_WIN32)
    char slash = '\\';
 #else
@@ -128,7 +141,11 @@ void retro_set_input_state(retro_input_state_t cb) { input_cb = cb; }
 static const struct retro_variable var_empty = { NULL, NULL };
 
 static const struct retro_variable var_fba_aspect = { CORE_OPTION_NAME "_aspect", "Core-provided aspect ratio; DAR|PAR" };
+#ifdef WII_VM
+static const struct retro_variable var_fba_frameskip = { CORE_OPTION_NAME "_frameskip", "Frameskip; 1|2|3|4|5|0" };
+#else
 static const struct retro_variable var_fba_frameskip = { CORE_OPTION_NAME "_frameskip", "Frameskip; 0|1|2|3|4|5" };
+#endif
 static const struct retro_variable var_fba_cpu_speed_adjust = { CORE_OPTION_NAME "_cpu_speed_adjust", "CPU overclock; 100|110|120|130|140|150|160|170|180|190|200" };
 static const struct retro_variable var_fba_diagnostic_input = { CORE_OPTION_NAME "_diagnostic_input", "Diagnostic Input; None|Hold Start|Start + A + B|Hold Start + A + B|Start + L + R|Hold Start + L + R|Hold Select|Select + A + B|Hold Select + A + B|Select + L + R|Hold Select + L + R" };
 static const struct retro_variable var_fba_hiscores = { CORE_OPTION_NAME "_hiscores", "Hiscores; enabled|disabled" };
@@ -2097,3 +2114,154 @@ static void set_input_descriptors()
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, input_descriptors);
 }
+
+#ifdef WII_VM
+// Gets the cache directory containing all RomUser_[parent name], RomGame_[parent name] and RomGame_D_[parent name] files.
+int get_cache_path(char *path)
+{
+   const char *system_directory_c = NULL;
+   environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &system_directory_c);
+   sprintf(path, "%s/cache/", system_directory_c);
+
+   DIR *dir = opendir(path);
+   if (dir)
+   {
+      closedir(dir);
+   }
+   else
+   {
+      printf("\nNo cache directory found!\nPlease create a 'cache' folder in %s", system_directory_c);
+      sleep(8);
+      exit(0);
+   }
+}
+
+bool CacheInit(unsigned char* &RomUser, unsigned int RomUser_size)
+{
+   UINT32 RomCache = 1*MB;
+   UINT32 RomGame_size = (16*MB) + (16*MB);
+   UINT32 PRG_size = 0;
+   char CacheName[1024];
+   const char *parentrom = BurnDrvGetTextA(DRV_PARENT);
+   const char *drvname   = BurnDrvGetTextA(DRV_NAME);
+
+   // Allocate virtual memory
+   RomUser = (UINT8 *)VM_Init(RomUser_size, RomCache);
+
+   // Retrieve the cache directory path
+   get_cache_path(CacheDir);
+
+   // Always use parent name for the cache file suffix
+   if (!parentrom)
+   {
+      if (strcmp(drvname, "jojo") == 0 || strcmp(drvname, "jojoba") == 0 || strcmp(drvname, "redearth") == 0 || strcmp(drvname, "sfiii") == 0 ||  strcmp(drvname, "sfiii2") == 0 || strcmp(drvname, "sfiii3") == 0)
+         sprintf(ParentName ,"%s", drvname);
+   }
+   else
+   {
+      sprintf(ParentName ,"%s", parentrom);
+   }
+
+   sprintf(CacheName ,"%sRomUser_%s", CacheDir, ParentName);
+   BurnCacheFile = fopen(CacheName, "rb");
+
+   // Check if we need to create the cache files
+   if(!BurnCacheFile)
+   {
+      CreateCache = true;
+      size_t RomGame_size = (16*MB) + (16*MB); // sh-2 program roms RomGame + RomGame_D
+
+      if (!strcmp(ParentName, "redearth") || !strcmp(ParentName, "sfiii"))
+      {
+         PRG_size = 8*MB;
+      }
+      else
+      {
+         PRG_size = 16*MB;
+      }
+
+      CacheSize = ( (RomUser_size*2 + PRG_size + RomGame_size) / (1*MB) );
+      ProgressBar(-1.0, "Please wait, cache files will be written...");
+   }
+   else
+   {
+      CacheSize = ( (RomUser_size + (16*MB) + (16*MB)) / (1*MB) );
+      CreateCache = false;
+   }
+   fclose(BurnCacheFile);
+
+   return CreateCache;
+}
+
+int CacheHandle(struct CacheInfo* Cache, unsigned int CacheRead, const char* msg, int mode)
+{
+   UINT8 step = 0;
+   char CacheName[1024];
+   char txt[1024];
+   float Progress = 0.0;
+   float BarOffset = 1.0;
+
+   if(mode == SHOW)
+   {
+      if(msg)
+      {
+         snprintf(txt, sizeof(txt), msg);
+      }
+      Progress = ((float)CacheRead) / CacheSize  * 5.0;
+      ProgressBar(Progress - BarOffset, txt);
+      return 0;
+   }
+
+   int fileidx = 0;
+   UINT8* Rom;
+
+   // Read/Write the 3 cache files and show the progress bar
+   while(fileidx != 3)
+   {
+      if(fileidx)
+         CacheRead += step;
+
+      sprintf(CacheName ,"%s%s_%s", CacheDir, Cache[fileidx].filename, ParentName);
+
+      if(mode == WRITE)
+      {
+         BurnCacheFile = fopen(CacheName, "wb");
+      }
+      else if(mode == READ)
+      {
+         BurnCacheFile = fopen(CacheName, "rb");
+      }
+
+      step = Cache[fileidx].filesize;
+      Rom = Cache[fileidx].buffer;
+
+      // Read Rom... file in 1MB chunks in order to show progress.
+      for(int i = 0; i < step; i++)
+      {
+         if(mode == WRITE)
+         {
+            fwrite(Rom + (i*MB), 1*MB, 1, BurnCacheFile);
+            snprintf(txt, sizeof(txt), "Writing %s : %d/%d MB", CacheName, i, step);
+         }
+         else if(mode == READ)
+         {
+            fread(Rom + (i*MB), 1*MB, 1, BurnCacheFile);
+            snprintf(txt, sizeof(txt), "Reading %s : %d/%d MB", CacheName, i, step);
+         }
+         Progress = ((float)i + CacheRead) / CacheSize  * 5.0;
+         ProgressBar(Progress - BarOffset, txt);
+      }
+
+      snprintf(txt, sizeof(txt), "%s : %d/%d MB. Done.", CacheName, step, step);
+      ProgressBar(Progress - BarOffset, txt);
+      fclose(BurnCacheFile);
+
+      fileidx++;
+   }
+
+   if(Rom)
+      Rom = NULL;
+
+   return 0;
+}
+#endif

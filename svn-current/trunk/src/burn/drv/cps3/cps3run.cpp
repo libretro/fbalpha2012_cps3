@@ -24,6 +24,13 @@ Port to FBA by OopsWare
 //#define	FAST_BOOT	1
 #define SPEED_HACK	1		// Default should be 1, if not FPS would drop.
 
+#ifdef WII_VM
+#include "libretro.h"
+#include "wii_vm.h"
+#include "wii_progressbar.h"
+bool BurnCreateCache = false;
+#endif
+
 static UINT8 *Mem = NULL, *MemEnd = NULL;
 static UINT8 *RamStart, *RamEnd;
 
@@ -472,9 +479,9 @@ static INT32 MemIndex()
 {
 	UINT8 *Next; Next = Mem;
 	RomBios 	= Next; Next += 0x0080000;
-
+#ifndef WII_VM
 	RomUser		= Next; Next += cps3_data_rom_size;	// 0x5000000;
-	
+#endif
 	RamStart	= Next;
 	
 	RomGame 	= Next; Next += 0x1000000;
@@ -852,14 +859,19 @@ void __fastcall cps3RomWriteWord(UINT32 addr, UINT16 data)
 
 void __fastcall cps3RomWriteLong(UINT32 addr, UINT32 data)
 {
-//	bprintf(1, _T("Rom Attempt to write long value %8x to location %8x\n"), data, addr);
-	addr &= 0x00ffffff;
-	cps3_flash_write(&main_flash, addr, data);
-	
-	if ( main_flash.flash_mode == FM_NORMAL ) {
-		bprintf(1, _T("Rom Attempt to write long value %8x to location %8x\n"), data, addr);
-		*(UINT32 *)(RomGame + addr) = data;
-		*(UINT32 *)(RomGame_D + addr) = data ^ cps3_mask(addr + 0x06000000, cps3_key1, cps3_key2);
+#ifdef WII_VM
+	if(BurnCreateCache)
+#endif
+	{
+	//	bprintf(1, _T("Rom Attempt to write long value %8x to location %8x\n"), data, addr);
+		addr &= 0x00ffffff;
+		cps3_flash_write(&main_flash, addr, data);
+		
+		if ( main_flash.flash_mode == FM_NORMAL ) {
+			bprintf(1, _T("Rom Attempt to write long value %8x to location %8x\n"), data, addr);
+			*(UINT32 *)(RomGame + addr) = data;
+			*(UINT32 *)(RomGame_D + addr) = data ^ cps3_mask(addr + 0x06000000, cps3_key1, cps3_key2);
+		}
 	}
 }
 
@@ -1073,6 +1085,7 @@ static void be_to_le(UINT8 * p, INT32 size)
 	}
 }
 
+
 INT32 cps3Init()
 {
 	INT32 nRet, ii, offset;
@@ -1112,6 +1125,19 @@ INT32 cps3Init()
 #endif
 	cps3_decrypt_bios();
 
+#ifdef WII_VM
+	UINT32 CacheRead = 0;
+	BurnCreateCache = CacheInit(RomUser, cps3_data_rom_size);
+
+struct CacheInfo Cache[] = {
+		{"RomUser", RomUser, (cps3_data_rom_size) / (1*MB) },
+		{"RomGame", RomGame, (16*MB) / (1*MB) },
+		{"RomGame_D", RomGame_D, (16*MB) / (1*MB) }
+};
+
+if(BurnCreateCache)
+#endif
+{
 	// load and decode sh-2 program roms
 	ii = 0;	offset = 0;
 	while (BurnDrvGetRomInfo(&pri, ii) == 0) {
@@ -1126,11 +1152,17 @@ INT32 cps3Init()
 			ii++;
 		}
 	}
+	
 #ifndef MSB_FIRST
 	be_to_le( RomGame, 0x1000000 );
 #endif
 	cps3_decrypt_game();
-	
+#ifdef WII_VM
+	INT32 PRG_size = offset;
+	UINT8 step = (cps3_data_rom_size)/(1*MB);
+	CacheRead += (offset)/(1*MB);
+	CacheHandle(Cache, CacheRead, "Loading sh-2 roms done.", SHOW);
+#endif
 	// load graphic and sound roms
 	ii = 0;	offset = 0;
 	while (BurnDrvGetRomInfo(&pri, ii) == 0) {
@@ -1139,10 +1171,23 @@ INT32 cps3Init()
 			BurnLoadRom(RomUser + offset + 1, ii + 1, 2);
 			offset += pri.nLen * 2;
 			ii += 2;
+#ifdef WII_VM
+			CacheRead = (offset + PRG_size)/(1*MB);
+			char txt[128];
+			snprintf(txt, sizeof(txt), "Loading Graphic and Sound in VM: %d/%d MB", CacheRead - (PRG_size/(1*MB)), step);
+			CacheHandle(Cache, CacheRead, txt, SHOW);
+#endif
 		} else {
 			ii++;
 		}
 	}
+}
+#ifdef WII_VM
+else // Load the cache files
+{
+	CacheHandle(Cache, CacheRead, "", READ);
+}
+#endif
 
 	{
 		Sh2Init(1);
@@ -1237,6 +1282,12 @@ INT32 cps3Init()
 	
 	pBurnDrvPalette = (UINT32*)Cps3CurPal;
 		
+#ifdef WII_VM
+	if(BurnCreateCache)
+	{
+		CacheHandle(Cache, CacheRead, "", WRITE);
+	}
+#endif
 	Cps3Reset();
 	return 0;
 }
@@ -1244,11 +1295,15 @@ INT32 cps3Init()
 INT32 cps3Exit()
 {
 	Sh2Exit();
-	
+#ifdef WII_VM
+	RomUser = NULL;
+	VM_Deinit();
+	VM_InvalidateAll();
+#endif
 	BurnFree(Mem);
 
-	cps3SndExit();	
-	
+	cps3SndExit();
+
 	return 0;
 }
 
