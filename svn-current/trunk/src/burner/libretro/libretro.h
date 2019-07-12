@@ -1919,6 +1919,26 @@ unsigned retro_get_region(void);
 void *retro_get_memory_data(unsigned id);
 size_t retro_get_memory_size(unsigned id);
 
+#ifdef WII_VM
+struct CacheInfo
+{
+   char* filename;
+   unsigned char* buffer;
+   unsigned int filesize;
+};
+
+enum
+{
+   WRITE,
+   READ,
+   SHOW
+};
+
+int get_cache_path(char *path);
+bool CacheInit(unsigned char* &RomUser, unsigned int RomUser_size);
+int CacheHandle(struct CacheInfo* Cache, unsigned int CacheRead, const char* msg, int mode);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

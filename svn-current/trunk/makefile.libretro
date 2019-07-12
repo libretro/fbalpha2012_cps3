@@ -50,6 +50,11 @@ EXTERNAL_ZLIB = 0
 
 TARGET_NAME := fbalpha2012_cps3
 
+GIT_VERSION ?= " $(shell git rev-parse --short HEAD || echo unknown)"
+ifneq ($(GIT_VERSION)," unknown")
+   CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
+endif
+
 ifeq ($(platform), unix)
    TARGET := $(TARGET_NAME)_libretro.so
    fpic := -fPIC
@@ -243,13 +248,15 @@ else ifeq ($(platform), ctr)
    NO_PCE = 1
 else ifeq ($(platform), wii)
    TARGET := $(TARGET_NAME)_libretro_$(platform).a
+   include $(DEVKITPPC)/wii_rules
    CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
    CXX = $(DEVKITPPC)/bin/powerpc-eabi-g++$(EXE_EXT)
    AR = $(DEVKITPPC)/bin/powerpc-eabi-ar$(EXE_EXT)
+   CFLAGS += -I$(LIBOGC_INC) -I$(DEVKITPRO)/libogc/include -I$(DEVKITPRO)/libogc/include/ogc/machine
    ENDIANNESS_DEFINES =  -DWORDS_BIGENDIAN -DMSB_FIRST
-   PLATFORM_DEFINES := -DGEKKO -DHW_RVL -mrvl -mcpu=750 -meabi -mhard-float
+   PLATFORM_DEFINES :=  -DWII_VM -DGEKKO -DHW_RVL -mrvl -mcpu=750 -meabi -mhard-float
    PLATFORM_DEFINES += -U__INT32_TYPE__ -U __UINT32_TYPE__ -D__INT32_TYPE__=int
-   EXTERNAL_ZLIB = 1
+   EXTERNAL_ZLIB = 0
    STATIC_LINKING = 1
    NO_MD = 1
    NO_CPS = 1
@@ -479,7 +486,15 @@ FBA_CXXOBJ := $(SOURCES_CXX:.cpp=.o)
 SOURCES_C := $(filter-out $(BURN_BLACKLIST),$(foreach dir,$(FBA_SRC_DIRS),$(wildcard $(dir)/*.c)))
 FBA_COBJ := $(SOURCES_C:.c=.o)
 
+ifeq ($(platform), wii)
+WII_CSRCS := $(filter-out $(BURN_BLACKLIST),$(foreach dir,$(FBA_BURNER_DIR)/wii,$(wildcard $(dir)/*.c)))
+FBA_COBJ += $(WII_CSRCS:.c=.o)
+FBA_SSRCS := $(FBA_BURNER_DIR)/wii/dsihandler.S
+FBA_SOBJ := $(FBA_SSRCS:.S=.o)
+OBJS := $(FBA_SOBJ) $(FBA_COBJ) $(FBA_CXXOBJ)
+else
 OBJS := $(FBA_COBJ) $(FBA_CXXOBJ)
+endif
 
 FBA_DEFINES := -DUSE_SPEEDHACKS -D__LIBRETRO__ \
 	-D__LIBRETRO_OPTIMIZATIONS__ \
@@ -545,6 +560,10 @@ endif
 
 ifeq ($(ZLIB_INTERNAL), 0)
 INCFLAGS += -I$(FBA_LIB_DIR)
+endif
+
+ifeq ($(platform), wii)
+INCFLAGS += -I$(FBA_BURNER_DIR)/wii
 endif
 
 ifeq ($(LIBRETRO_OPTIMIZATIONS), 1)
@@ -628,15 +647,21 @@ generate-files:
 	@echo "CC $<"
 	@$(CC) -c -o $@ $< $(CFLAGS) $(INCFLAGS)
 
+ifeq ($(platform), wii)
+%.o: %.S
+	@echo "CS $<"
+	$(CC) -c -o $@ $< $(CFLAGS) $(INCDIRS)
+endif
+
 $(TARGET): $(OBJS)
-	@echo "** BUILDING $(TARGET) FOR PLATFORM $(platform) **"
+
 	@echo "LD $@"
 ifeq ($(STATIC_LINKING), 1)
 	@$(AR) rcs $@ $(OBJS)
 else
 	@$(CXX) -o $@ $(SHARED) $(OBJS) $(LDFLAGS)
 endif
-	@echo "** BUILD SUCCESSFUL! GG NO RE **"
+
 
 clean-objs:
 	rm -f $(OBJS)
