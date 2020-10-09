@@ -4,8 +4,6 @@
 #include <vector>
 #include <string>
 
-#include "cd/cd_interface.h"
-
 #define FBA_VERSION "v0.2.97.29" // Sept 16, 2013 (SVN)
 
 #define CORE_OPTION_NAME "fbalpha2012_cps3"
@@ -203,19 +201,9 @@ TCHAR szAppHiscorePath[MAX_PATH];
 TCHAR szAppSamplesPath[MAX_PATH];
 TCHAR szAppBurnVer[16];
 
-CDEmuStatusValue CDEmuStatus;
-
 const char* isowavLBAToMSF(const int LBA) { return ""; }
 int isowavMSFToLBA(const char* address) { return 0; }
 TCHAR* GetIsoPath() { return NULL; }
-INT32 CDEmuInit() { return 0; }
-INT32 CDEmuExit() { return 0; }
-INT32 CDEmuStop() { return 0; }
-INT32 CDEmuPlay(UINT8 M, UINT8 S, UINT8 F) { return 0; }
-INT32 CDEmuLoadSector(INT32 LBA, char* pBuffer) { return 0; }
-UINT8* CDEmuReadTOC(INT32 track) { return 0; }
-UINT8* CDEmuReadQChannel() { return 0; }
-INT32 CDEmuGetSoundBuffer(INT16* buffer, INT32 samples) { return 0; }
 
 // Replace the char c_find by the char c_replace in the destination c string
 char* str_char_replace(char* destination, char c_find, char c_replace)
