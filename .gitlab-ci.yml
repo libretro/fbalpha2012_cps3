@@ -8,7 +8,7 @@
 .core-defs:
   variables:
     JNI_PATH: svn-current/trunk/projectfiles/libretro-android
-    PATH: svn-current/trunk
+    MAKEFILE_PATH: svn-current/trunk
     MAKEFILE: makefile.libretro
     CORENAME: fbalpha2012_cps3
 
