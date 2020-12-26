@@ -315,10 +315,6 @@ else
    LDFLAGS += -static-libgcc -static-libstdc++
 endif
 
-ifeq ($(EXTERNAL_ZLIB), 0)
-LDFLAGS += -lz
-endif
-
 CC_SYSTEM = gcc
 CXX_SYSTEM = g++
 
