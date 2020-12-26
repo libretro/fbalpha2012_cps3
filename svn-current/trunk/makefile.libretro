@@ -55,6 +55,21 @@ ifneq ($(GIT_VERSION)," unknown")
    CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 endif
 
+ifneq (,$(findstring msvc,$(platform)))
+	OBJOUT = -Fo
+	LINKOUT = -out:
+ifeq ($(STATIC_LINKING),1)
+	LD ?= lib.exe
+	STATIC_LINKING=0
+else
+	LD = link.exe
+endif
+else
+	OBJOUT   = -o
+	LINKOUT  = -o 
+	LD = $(CXX)
+endif
+
 ifeq ($(platform), unix)
    TARGET := $(TARGET_NAME)_libretro.so
    fpic := -fPIC
@@ -413,24 +428,7 @@ endif
 FBA_BURN_DIRS := $(FBA_BURN_DIR) \
 	$(FBA_BURN_DIR)/devices \
 	$(FBA_BURN_DIR)/snd \
-	$(CPS2_DIR) \
-	$(FBA_BURN_DRIVERS_DIR)/cave \
 	$(CPS3_DIR) \
-	$(FBA_BURN_DRIVERS_DIR)/dataeast \
-	$(GALAXIAN_DIR) \
-	$(FBA_BURN_DRIVERS_DIR)/irem \
-	$(FBA_BURN_DRIVERS_DIR)/konami \
-	$(MD_DIR) \
-	$(NEOGEO_DIR) \
-	$(PCE_DIR) \
-	$(PGM_DIR) \
-	$(FBA_BURN_DRIVERS_DIR)/pre90s \
-	$(FBA_BURN_DRIVERS_DIR)/psikyo \
-	$(FBA_BURN_DRIVERS_DIR)/pst90s \
-	$(FBA_BURN_DRIVERS_DIR)/sega \
-	$(SNES_DIR) \
-	$(FBA_BURN_DRIVERS_DIR)/taito \
-	$(FBA_BURN_DRIVERS_DIR)/toaplan \
 	$(FBA_BURN_DRIVERS_DIR)
 
 FBA_CPU_DIRS := $(FBA_CPU_DIR) \
@@ -503,13 +501,6 @@ INCFLAGS := -I$(FBA_BURNER_DIR)/win32 \
 	-I$(FBA_CPU_DIR)/i8039 \
 	-I$(FBA_LIB_DIR)/zlib \
 	-I$(FBA_BURN_DIR)/drv/capcom \
-	-I$(FBA_BURN_DIR)/drv/dataeast \
-	-I$(FBA_BURN_DIR)/drv/cave \
-	-I$(FBA_BURN_DIR)/drv/neogeo \
-	-I$(FBA_BURN_DIR)/drv/psikyo \
-	-I$(FBA_BURN_DIR)/drv/sega \
-	-I$(FBA_BURN_DIR)/drv/toaplan \
-	-I$(FBA_BURN_DIR)/drv/taito \
 	-I$(FBA_GENERATED_DIR) \
 	-I$(FBA_LIB_DIR)
 
@@ -556,7 +547,6 @@ endif
 
 PERL = perl$(EXE_EXT)
 M68KMAKE_EXE = m68kmake$(EXE_EXT)
-CTVMAKE_EXE = ctvmake$(EXE_EXT)
 PGM_SPRITE_CREATE_EXE = pgmspritecreate$(EXE_EXT)
 EXE_PREFIX = ./
 
@@ -584,42 +574,10 @@ generate-files:
 	@mkdir -p $(FBA_GENERATED_DIR) 2>/dev/null || /bin/true
 	@echo "Generating $(FBA_GENERATED_DIR)/driverlist.h..."
 	@echo ""
-	$(PERL) $(FBA_SCRIPTS_DIR)/gamelist.pl -o $(FBA_GENERATED_DIR)/driverlist.h -l gamelist.txt $(FBA_BURN_DRIVERS_DIR)/capcom $(FBA_BURN_DRIVERS_DIR)/cave $(FBA_BURN_DRIVERS_DIR)/cps3 $(FBA_BURN_DRIVERS_DIR)/dataeast $(FBA_BURN_DRIVERS_DIR)/galaxian $(FBA_BURN_DRIVERS_DIR)/irem $(FBA_BURN_DRIVERS_DIR)/konami $(FBA_BURN_DRIVERS_DIR)/megadrive $(FBA_BURN_DRIVERS_DIR)/neogeo $(FBA_BURN_DRIVERS_DIR)/pce $(FBA_BURN_DRIVERS_DIR)/pgm $(FBA_BURN_DRIVERS_DIR)/pre90s $(FBA_BURN_DRIVERS_DIR)/psikyo $(FBA_BURN_DRIVERS_DIR)/pst90s $(FBA_BURN_DRIVERS_DIR)/sega $(FBA_BURN_DRIVERS_DIR)/snes $(FBA_BURN_DRIVERS_DIR)/taito $(FBA_BURN_DRIVERS_DIR)/toaplan
-	(PERL) $(FBA_SCRIPTS_DIR)/gamelist.pl -o $(FBA_GENERATED_DIR)/driverlist-gx.h -l gamelist-gx.txt $(FBA_BURN_DRIVERS_DIR)/cave $(FBA_BURN_DRIVERS_DIR)/cps3 $(FBA_BURN_DRIVERS_DIR)/dataeast $(FBA_BURN_DRIVERS_DIR)/galaxian $(FBA_BURN_DRIVERS_DIR)/irem $(FBA_BURN_DRIVERS_DIR)/konami $(FBA_BURN_DRIVERS_DIR)/pgm $(FBA_BURN_DRIVERS_DIR)/pre90s $(FBA_BURN_DRIVERS_DIR)/psikyo $(FBA_BURN_DRIVERS_DIR)/pst90s $(FBA_BURN_DRIVERS_DIR)/sega $(FBA_BURN_DRIVERS_DIR)/snes $(FBA_BURN_DRIVERS_DIR)/taito $(FBA_BURN_DRIVERS_DIR)/toaplan
-	@echo ""
-	@echo "Generating $(FBA_GENERATED_DIR)/neo_sprite_func.h..."
-	@echo ""
-	@echo "Generating $(FBA_GENERATED_DIR)/neo_sprite_func_table.h..."
-	@echo ""
-	$(PERL) $(FBA_SCRIPTS_DIR)/neo_sprite_func.pl -o $(FBA_GENERATED_DIR)/neo_sprite_func.h $(LIBRETRO_OPTIMIZATIONS)
-	@echo ""
-	@echo "Generating $(FBA_GENERATED_DIR)/psikyo_tile_func.h..."
-	@echo ""
-	@echo "Generating $(FBA_GENERATED_DIR)/psikyo_tile_func_table.h..."
-	@echo ""
-	$(PERL) $(FBA_SCRIPTS_DIR)/psikyo_tile_func.pl -o $(FBA_GENERATED_DIR)/psikyo_tile_func.h
-	@echo "Generating $(FBA_GENERATED_DIR)/cave_sprite_func.h..."
-	@echo ""
-	@echo "Generating[ $(FBA_GENERATED_DIR)/cave_tile_func_table.h"
-	@echo ""
-	$(PERL) $(FBA_SCRIPTS_DIR)/cave_sprite_func.pl -o $(FBA_GENERATED_DIR)/cave_sprite_func.h
-	$(PERL) $(FBA_SCRIPTS_DIR)/cave_tile_func.pl -o $(FBA_GENERATED_DIR)/cave_tile_func.h
-	@echo ""
-	@echo "Generate $(FBA_GENERATED_DIR)/toa_gp9001_func_table.h"
-	@echo ""
-	$(PERL) $(FBA_SCRIPTS_DIR)/toa_gp9001_func.pl -o $(FBA_GENERATED_DIR)/toa_gp9001_func.h
-	$(CXX_SYSTEM) $(GENERATE_OPTS) -o $(PGM_SPRITE_CREATE_EXE) $(FBA_BURN_DRIVERS_DIR)/pgm/pgm_sprite_create.cpp
-	@echo ""
-	@echo "Generating $(FBA_GENERATED_DIR)/pgm_sprite.h..."
-	@echo ""
-	$(EXE_PREFIX)$(PGM_SPRITE_CREATE_EXE) > $(FBA_GENERATED_DIR)/pgm_sprite.h
+	$(PERL) $(FBA_SCRIPTS_DIR)/gamelist.pl -o $(FBA_GENERATED_DIR)/driverlist.h -l gamelist.txt $(FBA_BURN_DRIVERS_DIR)/cps3
+	(PERL) $(FBA_SCRIPTS_DIR)/gamelist.pl -o $(FBA_GENERATED_DIR)/driverlist-gx.h -l gamelist-gx.txt $(FBA_BURN_DRIVERS_DIR)/cps3
 	$(CC_SYSTEM) $(GENERATE_OPTS) -o $(M68KMAKE_EXE) $(FBA_CPU_DIR)/m68k/m68kmake.c
 	$(EXE_PREFIX)$(M68KMAKE_EXE) $(FBA_CPU_DIR)/m68k/ $(FBA_CPU_DIR)/m68k/m68k_in.c
-	$(CXX_SYSTEM) $(GENERATE_OPTS) -o $(CTVMAKE_EXE) $(FBA_BURN_DRIVERS_DIR)/capcom/ctv_make.cpp
-	@echo ""
-	@echo "Generating $(FBA_GENERATED_DIR)/ctv.h..."
-	@echo ""
-	$(EXE_PREFIX)$(CTVMAKE_EXE) > $(FBA_GENERATED_DIR)/ctv.h
 
 %.o: %.cpp
 	@echo "CXX $<"
@@ -637,13 +595,11 @@ endif
 
 $(TARGET): $(OBJS)
 
-	@echo "LD $@"
 ifeq ($(STATIC_LINKING), 1)
 	@$(AR) rcs $@ $(OBJS)
 else
-	@$(CXX) -o $@ $(SHARED) $(OBJS) $(LDFLAGS)
+	$(LD) $(LINKOUT)$@ $(SHARED) $(OBJS) $(LDFLAGS)
 endif
-
 
 clean-objs:
 	rm -f $(OBJS)
@@ -652,6 +608,4 @@ clean:
 	rm -f $(TARGET)
 	rm -f $(OBJS)
 	rm -f $(M68KMAKE_EXE)
-	rm -f $(PGM_SPRITE_CREATE_EXE)
-	rm -f $(CTVMAKE_EXE)
 endif
