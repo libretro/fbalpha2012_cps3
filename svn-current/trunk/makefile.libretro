@@ -46,7 +46,7 @@ FBA_GENERATED_DIR = $(MAIN_FBA_DIR)/dep/generated
 FBA_SCRIPTS_DIR = $(MAIN_FBA_DIR)/dep/scripts
 GRIFFIN_DIR = griffin-libretro
 
-EXTERNAL_ZLIB = 0
+EXTERNAL_ZLIB = 1
 
 TARGET_NAME := fbalpha2012_cps3
 
