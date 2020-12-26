@@ -33,9 +33,6 @@ include:
     file: '/android-jni.yml'
 
   ################################## CONSOLES ################################
-  # Nintendo Switch
-  - project: 'libretro-infrastructure/ci-templates'
-    file: '/libnx-static.yml'
 
 # Stages for building
 stages:
@@ -92,9 +89,3 @@ android-x86:
     - .core-defs
 
 ################################### CONSOLES #################################
-# Nintendo Switch
-libretro-build-libnx-aarch64:
-  extends:
-    - .libretro-libnx-static-retroarch-master
-    - .core-defs
-
