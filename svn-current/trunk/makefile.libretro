@@ -331,7 +331,7 @@ FBA_SRC_DIRS := $(FBA_BURNER_DIR) $(FBA_BURN_DIRS) $(FBA_CPU_DIRS) $(FBA_BURNER_
 
 ifeq ($(platform), ctr)
 	BURN_BLACKLIST += $(FBA_BURN_DIR)/burn_memory.cpp
-	FBA_SRC_DIRS += $(LIBRETRO_DIR)/3ds
+	FBA_SRC_DIRS += $(LIBRETRO_DIR)/ctr
 endif
 
 ifeq ($(EXTERNAL_ZLIB), 1)
