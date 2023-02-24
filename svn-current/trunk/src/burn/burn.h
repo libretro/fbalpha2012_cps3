@@ -23,9 +23,6 @@
 extern TCHAR szAppHiscorePath[MAX_PATH];
 extern TCHAR szAppSamplesPath[MAX_PATH];
 
-// Enable the MAME logerror() function in debug builds
-// #define MAME_USE_LOGERROR
-
 // Give access to the CPUID function for various compilers
 #if defined (__GNUC__)
  #define CPUID(f,ra,rb,rc,rd) __asm__ __volatile__ ("cpuid"											\
@@ -211,10 +208,6 @@ extern UINT32 *pBurnDrvPalette;
 #define PRINT_UI		(1)
 #define PRINT_IMPORTANT (2)
 #define PRINT_ERROR		(3)
-
-#ifndef bprintf
-extern INT32 (__cdecl *bprintf) (INT32 nStatus, TCHAR* szFormat, ...);
-#endif
 
 INT32 BurnLibInit();
 INT32 BurnLibExit();

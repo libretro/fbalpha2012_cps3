@@ -40,7 +40,6 @@ UINT8 *BurnMalloc(INT32 size)
                memptr[i] = NULL;
                printf("size       : 0x%08X\n", size);
                printf("total_size : 0x%08X\n", total_size);
-               bprintf (0, _T("\nBurnMalloc failed to allocate %d bytes of memory!\n"), size);
                DEBUG_HOLD();
                printf("\n\nPress Start.\n\n");
                fflush(stdout);
@@ -69,9 +68,6 @@ UINT8 *BurnMalloc(INT32 size)
          return memptr[i];
       }
    }
-
-   bprintf (0, _T("BurnMalloc called too many times!\n"));
-
    return NULL; // Freak out!
 }
 
@@ -98,9 +94,6 @@ void BurnExitMemoryManager(void)
 	for (INT32 i = 0; i < MAX_MEM_PTR; i++)
 	{
 		if (memptr[i] != NULL) {
-#if defined FBA_DEBUG
-			bprintf(PRINT_ERROR, _T("BurnExitMemoryManager had to free mem pointer %i\n"), i);
-#endif
 			svcControlMemory((u32 *)&tmp, (u32)memptr[i], 0, memsize[i], MEMOP_FREE, (MemPerm)(MEMPERM_READ | MEMPERM_WRITE));
 			memptr[i] = NULL;
          memsize[i] = 0;

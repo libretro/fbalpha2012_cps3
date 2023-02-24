@@ -5,13 +5,6 @@
 #include "burn_sound.h"
 #include "driverlist.h"
 
-// filler function, used if the application is not printing debug messages
-static INT32 __cdecl BurnbprintfFiller(INT32, TCHAR* , ...) { return 0; }
-// pointer to burner printing function
-#ifndef bprintf
-INT32 (__cdecl *bprintf)(INT32 nStatus, TCHAR* szFormat, ...) = BurnbprintfFiller;
-#endif
-
 INT32 nBurnVer = BURN_VERSION;		// Version number of the library
 
 UINT32 nBurnDrvCount = 0;		// Count of game drivers
@@ -583,27 +576,17 @@ extern "C" INT32 BurnDrvInit()
 			nName++;
 		}
 
-		// Print the title
-
-		bprintf(PRINT_IMPORTANT, _T("*** Starting emulation of %s - %s.\n"), BurnDrvGetText(DRV_NAME), BurnDrvGetText(DRV_FULLNAME));
-
 		// Then print the alternative titles
 
 		if (nName > 1) {
-			bprintf(PRINT_IMPORTANT, _T("    Alternative %s "), (nName > 2) ? _T("titles are") : _T("title is"));
 			pszName = BurnDrvGetText(DRV_FULLNAME);
 			nName = 1;
 			while ((pszName = BurnDrvGetText(DRV_NEXTNAME | DRV_FULLNAME)) != NULL) {
 				if (pszPosition + _tcslen(pszName) - 1022 > szText) {
 					break;
 				}
-				if (nName > 1) {
-					bprintf(PRINT_IMPORTANT, _T(SEPERATOR_1));
-				}
-				bprintf(PRINT_IMPORTANT, _T("%s"), pszName);
 				nName++;
 			}
-			bprintf(PRINT_IMPORTANT, _T(".\n"));
 		}
 	}
 #endif
@@ -636,20 +619,6 @@ extern "C" INT32 BurnDrvInit()
 // Exit game emulation
 extern "C" INT32 BurnDrvExit()
 {
-#if defined (FBA_DEBUG)
-	if (starttime) {
-		clock_t endtime;
-		clock_t nElapsedSecs;
-
-		endtime = clock();
-		nElapsedSecs = (endtime - starttime);
-		bprintf(PRINT_IMPORTANT, _T(" ** Emulation ended (running for %.2f seconds).\n"), (float)nElapsedSecs / CLOCKS_PER_SEC);
-		bprintf(PRINT_IMPORTANT, _T("    %.2f%% of frames rendered (%d out of a total %d).\n"), (float)nFramesRendered / nFramesEmulated * 100, nFramesRendered, nFramesEmulated);
-		bprintf(PRINT_IMPORTANT, _T("    %.2f frames per second (average).\n"), (float)nFramesRendered / nFramesEmulated * nBurnFPS / 100);
-		bprintf(PRINT_NORMAL, _T("\n"));
-	}
-#endif
-
 	CheatExit();
 	CheatSearchExit();
 	HiscoreExit();
@@ -662,10 +631,6 @@ extern "C" INT32 BurnDrvExit()
 	INT32 nRet = pDriver[nBurnDrvActive]->Exit();			// Forward to drivers function
 	
 	BurnExitMemoryManager();
-#if defined FBA_DEBUG
-	DebugTrackerExit();
-#endif
-
 	return nRet;
 }
 
@@ -673,31 +638,22 @@ INT32 (__cdecl* BurnExtCartridgeSetupCallback)(BurnCartrigeCommand nCommand) = N
 
 INT32 BurnDrvCartridgeSetup(BurnCartrigeCommand nCommand)
 {
-	if (nBurnDrvActive >= nBurnDrvCount || BurnExtCartridgeSetupCallback == NULL) {
+	if (nBurnDrvActive >= nBurnDrvCount || BurnExtCartridgeSetupCallback == NULL)
 		return 1;
-	}
 
-	if (nCommand == CART_EXIT) {
+	if (nCommand == CART_EXIT)
 		return pDriver[nBurnDrvActive]->Exit();
-	}
 
-	if (nCommand != CART_INIT_END && nCommand != CART_INIT_START) {
+	if (nCommand != CART_INIT_END && nCommand != CART_INIT_START)
 		return 1;
-	}
 
 	BurnExtCartridgeSetupCallback(CART_INIT_END);
 
-#if defined FBA_DEBUG
-		bprintf(PRINT_NORMAL, _T("  * Loading"));
-#endif
-
-	if (BurnExtCartridgeSetupCallback(CART_INIT_START)) {
+	if (BurnExtCartridgeSetupCallback(CART_INIT_START))
 		return 1;
-	}
 
-	if (nCommand == CART_INIT_START) {
+	if (nCommand == CART_INIT_START)
 		return pDriver[nBurnDrvActive]->Init();
-	}
 
 	return 0;
 }
@@ -828,19 +784,11 @@ static INT32 nTransWidth, nTransHeight;
 
 void BurnTransferClear()
 {
-#if defined FBA_DEBUG
-	if (!Debug_BurnTransferInitted) bprintf(PRINT_ERROR, _T("BurnTransferClear called without init\n"));
-#endif
-
 	memset((void*)pTransDraw, 0, nTransWidth * nTransHeight * sizeof(UINT16));
 }
 
 INT32 BurnTransferCopy(UINT32* pPalette)
 {
-#if defined FBA_DEBUG
-	if (!Debug_BurnTransferInitted) bprintf(PRINT_ERROR, _T("BurnTransferCopy called without init\n"));
-#endif
-
 	UINT16* pSrc = pTransDraw;
 	UINT8* pDest = pBurnDraw;
 	
@@ -882,32 +830,22 @@ INT32 BurnTransferCopy(UINT32* pPalette)
 
 void BurnTransferExit()
 {
-#if defined FBA_DEBUG
-	if (!Debug_BurnTransferInitted) bprintf(PRINT_ERROR, _T("BurnTransferClear called without init\n"));
-#endif
-
 	if (pTransDraw) {
 		free(pTransDraw);
 		pTransDraw = NULL;
 	}
-	
-	Debug_BurnTransferInitted = 0;
 }
 
 INT32 BurnTransferInit()
 {
-	Debug_BurnTransferInitted = 1;
-	
-	if (BurnDrvGetFlags() & BDF_ORIENTATION_VERTICAL) {
+	if (BurnDrvGetFlags() & BDF_ORIENTATION_VERTICAL)
 		BurnDrvGetVisibleSize(&nTransHeight, &nTransWidth);
-	} else {
+	else
 		BurnDrvGetVisibleSize(&nTransWidth, &nTransHeight);
-	}
 
 	pTransDraw = (UINT16*)malloc(nTransWidth * nTransHeight * sizeof(UINT16));
-	if (pTransDraw == NULL) {
+	if (pTransDraw == NULL)
 		return 1;
-	}
 
 	BurnTransferClear();
 
@@ -945,27 +883,6 @@ INT32 BurnAreaScan(INT32 nAction, INT32* pnMin)
 // Wrappers for MAME-specific function calls
 
 #include "driver.h"
-
-// ----------------------------------------------------------------------------
-// Wrapper for MAME logerror calls
-
-#if defined (FBA_DEBUG) && defined (MAME_USE_LOGERROR)
-void logerror(char* szFormat, ...)
-{
-	static char szLogMessage[1024];
-
-	va_list vaFormat;
-	va_start(vaFormat, szFormat);
-
-	_vsnprintf(szLogMessage, 1024, szFormat, vaFormat);
-
-	va_end(vaFormat);
-
-	bprintf(PRINT_ERROR, _T("%hs"), szLogMessage);
-
-	return;
-}
-#endif
 
 // ----------------------------------------------------------------------------
 // Wrapper for MAME state_save_register_* calls

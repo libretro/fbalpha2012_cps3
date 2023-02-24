@@ -183,14 +183,9 @@ void BurnExitMemoryManager();
 // ---------------------------------------------------------------------------
 // Debug Tracker
 
-extern UINT8 Debug_BurnTransferInitted;
-extern UINT8 Debug_BurnGunInitted;
-extern UINT8 Debug_BurnLedInitted;
-extern UINT8 Debug_HiscoreInitted;
 extern UINT8 Debug_GenericTilesInitted;
 
 extern UINT8 DebugDev_8255PPIInitted;
-extern UINT8 DebugDev_EEPROMInitted;
 extern UINT8 DebugDev_PandoraInitted;
 extern UINT8 DebugDev_SeibuSndInitted;
 extern UINT8 DebugDev_TimeKprInitted;
@@ -243,8 +238,5 @@ extern UINT8 DebugCPU_VezInitted;
 extern UINT8 DebugCPU_ZetInitted;
 extern UINT8 DebugCPU_PIC16C5XInitted;
 extern UINT8 DebugCPU_I8039Initted;
-extern UINT8 DebugCPU_SH2Initted;
-
-void DebugTrackerExit();
 
 #endif
