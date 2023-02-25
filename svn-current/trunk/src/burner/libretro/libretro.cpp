@@ -55,11 +55,11 @@ static bool  diag_combo_activated = false;
 static bool  one_diag_input_pressed = false;
 static bool  all_diag_input_pressed = true;
 
-static UINT8 *diag_input;
-static UINT8 diag_input_start[] =       {RETRO_DEVICE_ID_JOYPAD_START,  RETRO_DEVICE_ID_JOYPAD_EMPTY };
-static UINT8 diag_input_start_a_b[] =   {RETRO_DEVICE_ID_JOYPAD_START,  RETRO_DEVICE_ID_JOYPAD_A, RETRO_DEVICE_ID_JOYPAD_B, RETRO_DEVICE_ID_JOYPAD_EMPTY };
-static UINT8 diag_input_start_l_r[] =   {RETRO_DEVICE_ID_JOYPAD_START,  RETRO_DEVICE_ID_JOYPAD_L, RETRO_DEVICE_ID_JOYPAD_R, RETRO_DEVICE_ID_JOYPAD_EMPTY };
-static UINT8 diag_input_select[] =      {RETRO_DEVICE_ID_JOYPAD_SELECT, RETRO_DEVICE_ID_JOYPAD_EMPTY };
+static UINT8 *diag_input             = NULL;
+static UINT8 diag_input_start[]      =  {RETRO_DEVICE_ID_JOYPAD_START,  RETRO_DEVICE_ID_JOYPAD_EMPTY };
+static UINT8 diag_input_start_a_b[]  =  {RETRO_DEVICE_ID_JOYPAD_START,  RETRO_DEVICE_ID_JOYPAD_A, RETRO_DEVICE_ID_JOYPAD_B, RETRO_DEVICE_ID_JOYPAD_EMPTY };
+static UINT8 diag_input_start_l_r[]  =  {RETRO_DEVICE_ID_JOYPAD_START,  RETRO_DEVICE_ID_JOYPAD_L, RETRO_DEVICE_ID_JOYPAD_R, RETRO_DEVICE_ID_JOYPAD_EMPTY };
+static UINT8 diag_input_select[]     =  {RETRO_DEVICE_ID_JOYPAD_SELECT, RETRO_DEVICE_ID_JOYPAD_EMPTY };
 static UINT8 diag_input_select_a_b[] =  {RETRO_DEVICE_ID_JOYPAD_SELECT, RETRO_DEVICE_ID_JOYPAD_A, RETRO_DEVICE_ID_JOYPAD_B, RETRO_DEVICE_ID_JOYPAD_EMPTY };
 static UINT8 diag_input_select_l_r[] =  {RETRO_DEVICE_ID_JOYPAD_SELECT, RETRO_DEVICE_ID_JOYPAD_L, RETRO_DEVICE_ID_JOYPAD_R, RETRO_DEVICE_ID_JOYPAD_EMPTY };
 
@@ -67,11 +67,11 @@ static unsigned int BurnDrvGetIndexByName(const char* name);
 
 static bool gamepad_controls_p1 = true;
 static bool gamepad_controls_p2 = true;
-static bool newgen_controls_p1 = false;
-static bool newgen_controls_p2 = false;
-static bool remap_lr_p1 = false;
-static bool remap_lr_p2 = false;
-static bool core_aspect_par = false;
+static bool newgen_controls_p1  = false;
+static bool newgen_controls_p2  = false;
+static bool remap_lr_p1         = false;
+static bool remap_lr_p2         = false;
+static bool core_aspect_par     = false;
 
 extern INT32 EnableHiscores;
 
@@ -86,7 +86,7 @@ struct ROMFIND
 	unsigned int nState;
 	int nArchive;
 	int nPos;
-   BurnRomInfo ri;
+	BurnRomInfo ri;
 };
 
 static std::vector<std::string> g_find_list_path;
@@ -95,8 +95,8 @@ static unsigned g_rom_count;
 
 static uint32_t *g_fba_frame;
 static int16_t *g_audio_buf;
-INT32 nAudSegLen = 0;
-INT32 g_audio_samplerate = 48000;
+static INT32 nAudSegLen = 0;
+static INT32 g_audio_samplerate = 48000;
 UINT32 nFrameskip = 1;
 
 // libretro globals
@@ -150,19 +150,12 @@ void retro_get_system_info(struct retro_system_info *info)
    info->valid_extensions = "iso|zip";
 }
 
-/////
-static void InputMake();
+static void InputMake(void);
 static bool init_input();
 static void check_variables();
 
-int bDrvOkay;
-
 TCHAR szAppHiscorePath[MAX_PATH];
 TCHAR szAppBurnVer[16];
-
-const char* isowavLBAToMSF(const int LBA) { return ""; }
-int isowavMSFToLBA(const char* address) { return 0; }
-TCHAR* GetIsoPath() { return NULL; }
 
 // Replace the char c_find by the char c_replace in the destination c string
 char* str_char_replace(char* destination, char c_find, char c_replace)
@@ -211,7 +204,7 @@ static void InpDIPSWGetOffset (void)
 		if (bdi.nFlags == 0xF0)
 		{
 			nDIPOffset = bdi.nInput;
-            log_cb(RETRO_LOG_INFO, "DIP switches offset: %d.\n", bdi.nInput);
+			log_cb(RETRO_LOG_INFO, "DIP switches offset: %d.\n", bdi.nInput);
 			break;
 		}
 	}
@@ -388,7 +381,7 @@ static int InpDIPSWInit(void)
    return 0;
 }
 
-static void set_environment()
+static void set_environment(void)
 {
    std::vector<const retro_variable*> vars_systems;
 
@@ -406,9 +399,7 @@ static void set_environment()
    vars_systems.push_back(&var_fba_lr_controls_p2);
 
    if (pgi_diag)
-   {
       vars_systems.push_back(&var_fba_diagnostic_input);
-   }
 
    int nbr_vars = vars_systems.size();
    int nbr_dips = dipswitch_core_options.size();
@@ -439,8 +430,9 @@ static void set_environment()
    environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars);
 }
 
-// Update DIP switches value  depending of the choice the user made in core options
-static bool apply_dipswitch_from_variables()
+// Update DIP switches value  depending of the choice 
+// the user made in core options
+static bool apply_dipswitch_from_variables(void)
 {
    bool dip_changed = false;
    
@@ -486,10 +478,10 @@ static bool apply_dipswitch_from_variables()
    return dip_changed;
 }
 
-int InputSetCooperativeLevel(const bool bExclusive, const bool bForeGround) { return 0; }
-
-void Reinitialise(void) {
-    // Update the geometry, some games (sfiii2) and systems (megadrive) need it.
+void Reinitialise(void)
+{
+    // Update the geometry, sfiii2 needs it (when toggling
+    // between widescreen and non-widescreen
     struct retro_system_av_info av_info;
     retro_get_system_av_info(&av_info);
     environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &av_info);
@@ -498,12 +490,9 @@ void Reinitialise(void) {
 static void ForceFrameStep(int bDraw)
 {
    nBurnLayer = 0xff;
-
    nCurrentFrame++;
-
-	if (!bDraw)
-		pBurnDraw = NULL;
-
+   if (!bDraw)
+	   pBurnDraw = NULL;
    BurnDrvFrame();
 }
 
@@ -922,7 +911,7 @@ static void check_variables(void)
    }
 }
 
-void retro_run()
+void retro_run(void)
 {
    int width, height;
    BurnDrvGetVisibleSize(&width, &height);
@@ -932,9 +921,9 @@ void retro_run()
 
    ForceFrameStep(nCurrentFrame % nFrameskip == 0);
 
-   unsigned drv_flags = BurnDrvGetFlags();
+   unsigned drv_flags  = BurnDrvGetFlags();
    uint32_t height_tmp = height;
-   size_t pitch_size = nBurnBpp == 2 ? sizeof(uint16_t) : sizeof(uint32_t);
+   size_t pitch_size   = nBurnBpp == 2 ? sizeof(uint16_t) : sizeof(uint32_t);
 
    switch (drv_flags & (BDF_ORIENTATION_FLIPPED | BDF_ORIENTATION_VERTICAL))
    {
@@ -1153,26 +1142,6 @@ static bool fba_init(unsigned driver, const char *game_zip_name)
       default:
          rotation = 0;
    }
-/*
-   if(
-         (strcmp("gunbird2", game_zip_name) == 0) ||
-         (strcmp("s1945ii", game_zip_name) == 0) ||
-         (strcmp("s1945iii", game_zip_name) == 0) ||
-         (strcmp("dragnblz", game_zip_name) == 0) ||
-         (strcmp("gnbarich", game_zip_name) == 0) ||
-         (strcmp("mjgtaste", game_zip_name) == 0) ||
-         (strcmp("tgm2", game_zip_name) == 0) ||
-         (strcmp("tgm2p", game_zip_name) == 0) ||
-         (strcmp("soldivid", game_zip_name) == 0) ||
-         (strcmp("daraku", game_zip_name) == 0) ||
-         (strcmp("sbomber", game_zip_name) == 0) ||
-         (strcmp("sbombera", game_zip_name) == 0) 
-
-         )
-   {
-      nBurnBpp = 4;
-   }
-*/
    log_cb(RETRO_LOG_INFO, "Game: %s\n", game_zip_name);
 
    environ_cb(RETRO_ENVIRONMENT_SET_ROTATION, &rotation);
@@ -1313,9 +1282,9 @@ error:
    return false;
 }
 
-bool retro_load_game_special(unsigned, const struct retro_game_info*, size_t) { return false; }
 
-void retro_unload_game(void) {
+void retro_unload_game(void)
+{
    if (driver_inited)
    {
       BurnDrvExit();
@@ -1323,12 +1292,13 @@ void retro_unload_game(void) {
    }
 }
 
-unsigned retro_get_region() { return RETRO_REGION_NTSC; }
+unsigned retro_get_region(void) { return RETRO_REGION_NTSC; }
 
 void *retro_get_memory_data(unsigned) { return 0; }
 size_t retro_get_memory_size(unsigned) { return 0; }
+bool retro_load_game_special(unsigned, const struct retro_game_info*, size_t) { return false; }
 
-unsigned retro_api_version() { return RETRO_API_VERSION; }
+unsigned retro_api_version(void) { return RETRO_API_VERSION; }
 
 void retro_set_controller_port_device(unsigned, unsigned) {}
 
@@ -1371,8 +1341,9 @@ static const char *print_label(unsigned i)
       case RETRO_DEVICE_ID_JOYPAD_EMPTY:
          return "None";
       default:
-         return "No known label";
+	 break;
    }
+   return "No known label";
 }
 
 static bool init_input(void)
@@ -1646,7 +1617,7 @@ static bool init_input(void)
 
 static inline INT32 CinpState(INT32 nCode)
 {
-   INT32 id = keybinds[nCode][0];
+   INT32 id    = keybinds[nCode][0];
    UINT32 port = keybinds[nCode][1];
    return input_cb(port, RETRO_DEVICE_JOYPAD, 0, id);
 }
@@ -1661,8 +1632,6 @@ static inline int CinpJoyAxis(int i, int axis)
       case 1:
          return input_cb(i, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,
                RETRO_DEVICE_ID_ANALOG_Y);
-      case 2:
-         return 0;
       case 3:
          return input_cb(i, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT,
                RETRO_DEVICE_ID_ANALOG_X);
@@ -1670,21 +1639,15 @@ static inline int CinpJoyAxis(int i, int axis)
          return input_cb(i, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT,
                RETRO_DEVICE_ID_ANALOG_Y);
       case 5:
-         return 0;
       case 6:
-         return 0;
       case 7:
-         return 0;
+      case 2:
+	 break;
    }
    return 0;
 }
 
-static inline int CinpMouseAxis(int i, int axis)
-{
-   return 0;
-}
-
-static bool poll_diag_input()
+static bool poll_diag_input(void)
 {
    if (pgi_diag && diag_input)
    {
@@ -1741,18 +1704,18 @@ static bool poll_diag_input()
    return false;
 }
 
-static void InputTick()
+static void InputTick(void)
 {
 	struct GameInp *pgi;
 	UINT32 i;
 
 	for (i = 0, pgi = GameInp; i < nGameInpCount; i++, pgi++) {
 		INT32 nAdd = 0;
-		if ((pgi->nInput &  GIT_GROUP_SLIDER) == 0) {				// not a slider
+		if ((pgi->nInput &  GIT_GROUP_SLIDER) == 0) // not a slider
 			continue;
-		}
 
-		if (pgi->nInput == GIT_JOYSLIDER) {
+		if (pgi->nInput == GIT_JOYSLIDER)
+		{
 			// Get state of the axis
 			nAdd = CinpJoyAxis(pgi->Input.Slider.JoyAxis.nJoy, pgi->Input.Slider.JoyAxis.nAxis);
 			nAdd /= 0x100;
@@ -1774,12 +1737,10 @@ static void InputTick()
 
 		pgi->Input.Slider.nSliderValue += nAdd;
 		// Limit slider
-		if (pgi->Input.Slider.nSliderValue < 0x0100) {
+		if (pgi->Input.Slider.nSliderValue < 0x0100)
 			pgi->Input.Slider.nSliderValue = 0x0100;
-		}
-		if (pgi->Input.Slider.nSliderValue > 0xFF00) {
+		if (pgi->Input.Slider.nSliderValue > 0xFF00)
 			pgi->Input.Slider.nSliderValue = 0xFF00;
-		}
 	}
 }
 
@@ -1863,9 +1824,9 @@ static void InputMake(void)
 #endif
                break;
             }
-         case GIT_MOUSEAXIS:						// Mouse axis
+         case GIT_MOUSEAXIS: // Mouse axis
             {
-               pgi->Input.nVal = (UINT16)(CinpMouseAxis(pgi->Input.MouseAxis.nMouse, pgi->Input.MouseAxis.nAxis) * nAnalogSpeed);
+               pgi->Input.nVal = 0;
 #ifdef MSB_FIRST
                *((int *)pgi->Input.pShortVal) = pgi->Input.nVal;
 #else
