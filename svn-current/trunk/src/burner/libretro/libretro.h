@@ -1934,7 +1934,6 @@ enum
    SHOW
 };
 
-int get_cache_path(char *path);
 bool CacheInit(unsigned char* &RomUser, unsigned int RomUser_size);
 int CacheHandle(struct CacheInfo* Cache, unsigned int CacheRead, const char* msg, int mode);
 #endif

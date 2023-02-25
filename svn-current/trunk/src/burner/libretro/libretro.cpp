@@ -2013,7 +2013,7 @@ static void set_input_descriptors()
 
 #ifdef WII_VM
 // Gets the cache directory containing all RomUser_[parent name], RomGame_[parent name] and RomGame_D_[parent name] files.
-int get_cache_path(char *path)
+static void get_cache_path(char *path)
 {
    const char *system_directory_c = NULL;
    environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &system_directory_c);
@@ -2021,9 +2021,7 @@ int get_cache_path(char *path)
 
    DIR *dir = opendir(path);
    if (dir)
-   {
       closedir(dir);
-   }
    else
    {
       printf("\nNo cache directory found!\nPlease create a 'cache' folder in %s", system_directory_c);
