@@ -29,30 +29,16 @@
  *
  *****************************************************************************/
 
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <string.h>
 #include <stddef.h>
 
 #include "burnint.h"
 #include "sh2_intf.h"
 
-int has_sh2;
-
-/*typedef signed char INT8;
-typedef unsigned char UINT8;
-typedef signed short INT16;
-typedef unsigned short UINT16;
-typedef signed int INT32;
-typedef unsigned int UINT32;
-typedef signed long long INT64;
-typedef unsigned long long UINT64;*/
-
 #define BUSY_LOOP_HACKS 	1
 #define FAST_OP_FETCH		1
 #define USE_JUMPTABLE		0
 
-#define SH2_INT_15			15
+#define SH2_INT_15		15
 
 #ifndef SH2_INLINE
 #define	SH2_INLINE
@@ -379,8 +365,6 @@ void __fastcall Sh2EmptyWriteLong(unsigned int, unsigned int) { }
 
 int Sh2Exit(void)
 {
-	has_sh2 = 0;
-
 	if (Sh2Ext) {
 		free(Sh2Ext);
 		Sh2Ext = NULL;
@@ -418,8 +402,6 @@ static cpu_core_config Sh2CheatCpuConfig =
 
 int Sh2Init(int nCount)
 {
-	has_sh2 = 1;
-
 	Sh2Ext = (SH2EXT *)malloc(sizeof(SH2EXT) * nCount);
 	if (Sh2Ext == NULL) {
 		Sh2Exit();

@@ -29,58 +29,11 @@ static INT32 HiscoresInUse;
 static INT32 nCpuType;
 extern INT32 nSekCount;
 
-static void set_cpu_type()
-{
-	if (has_sh2)
-	{
-		nCpuType = 3;			// Hitachi SH2
-	}
-	else
-	{
-		nCpuType = 0;			// Unknown (don't use cheats)
-	}
-}
-
-static void cpu_open(INT32 nCpu)
-{
-	switch (nCpuType)
-	{
-		case 3:	
-			Sh2Open(nCpu);
-		break;
-	}
-}
-
-static void cpu_close()
-{
-	switch (nCpuType)
-	{
-		case 3:
-			Sh2Close();
-		break;
-	}
-}
-
-static UINT8 cpu_read_byte(UINT32 a)
-{
-	switch (nCpuType)
-	{
-		case 3:
-			return Sh2ReadByte(a);
-	}
-
-	return 0;
-}
-
-static void cpu_write_byte(UINT32 a, UINT8 d)
-{
-	switch (nCpuType)
-	{
-		case 3:
-			Sh2WriteByte(a, d);
-		break;
-	}
-}
+static void set_cpu_type(void) { nCpuType = 3; }
+static void cpu_open(INT32 nCpu) { Sh2Open(nCpu); }
+static void cpu_close(void) { Sh2Close(); }
+static UINT8 cpu_read_byte(UINT32 a) { return Sh2ReadByte(a); }
+static void cpu_write_byte(UINT32 a, UINT8 d) { Sh2WriteByte(a, d); }
 
 static UINT32 hexstr2num (const char **pString)
 {
@@ -94,17 +47,11 @@ static UINT32 hexstr2num (const char **pString)
 			INT32 digit;
 
 			if (c>='0' && c<='9')
-			{
 				digit = c-'0';
-			}
 			else if (c>='a' && c<='f')
-			{
 				digit = 10+c-'a';
-			}
 			else if (c>='A' && c<='F')
-			{
 				digit = 10+c-'A';
-			}
 			else
 			{
 				if (!c) string = NULL;
@@ -142,7 +89,7 @@ static INT32 matching_game_name (const char *pBuf, const char *name)
 	return (*pBuf == ':');
 }
 
-static INT32 CheckHiscoreAllowed()
+static INT32 CheckHiscoreAllowed(void)
 {
 	INT32 Allowed = 1;
 	
@@ -152,26 +99,24 @@ static INT32 CheckHiscoreAllowed()
 	return Allowed;
 }
 
-void HiscoreInit()
+void HiscoreInit(void)
 {
+	FILE *fp;
+	INT32 Offset = 0;
+	TCHAR szFilename[MAX_PATH];
+	TCHAR szDatFilename[MAX_PATH];
 	if (!CheckHiscoreAllowed()) return;
 	
 	HiscoresInUse = 0;
-	
-	TCHAR szDatFilename[MAX_PATH];
-#ifdef __LIBRETRO__
 #ifdef _WIN32
    char slash = '\\';
 #else
    char slash = '/';
 #endif
 	snprintf(szDatFilename, sizeof(szDatFilename), "%s%chiscore.dat", g_save_dir, slash);
-#else
-	_stprintf(szDatFilename, _T("%shiscore.dat"), szAppHiscorePath);
-#endif
 
-	FILE *fp = _tfopen(szDatFilename, _T("r"));
-	if (fp) {
+	if ((fp = _tfopen(szDatFilename, _T("r"))))
+	{
 		char buffer[MAX_CONFIG_LINE_SIZE];
 		enum { FIND_NAME, FIND_DATA, FETCH_DATA } mode;
 		mode = FIND_NAME;
@@ -213,21 +158,18 @@ void HiscoreInit()
 		fclose(fp);
 	}
 	
-	if (nHiscoreNumRanges) HiscoresInUse = 1;
+	if (nHiscoreNumRanges)
+		HiscoresInUse = 1;
 	
-	TCHAR szFilename[MAX_PATH];
-#ifdef __LIBRETRO__
 	snprintf(szFilename, sizeof(szFilename), "%s%c%s.hi", g_save_dir, slash, BurnDrvGetText(DRV_NAME));
-#else
-	_stprintf(szFilename, _T("%s%s.hi"), szAppHiscorePath, BurnDrvGetText(DRV_NAME));
-#endif
 
 	fp = _tfopen(szFilename, _T("r"));
-	INT32 Offset = 0;
-	if (fp) {
+	if (fp)
+	{
 		UINT32 nSize = 0;
 		
-		while (!feof(fp)) {
+		while (!feof(fp))
+		{
 			fgetc(fp);
 			nSize++;
 		}
@@ -237,16 +179,17 @@ void HiscoreInit()
 		
 		fgets((char*)Buffer, nSize, fp);
 		
-		for (UINT32 i = 0; i < nHiscoreNumRanges; i++) {
-			for (UINT32 j = 0; j < HiscoreMemRange[i].NumBytes; j++) {
+		for (UINT32 i = 0; i < nHiscoreNumRanges; i++)
+		{
+			for (UINT32 j = 0; j < HiscoreMemRange[i].NumBytes; j++)
 				HiscoreMemRange[i].Data[j] = Buffer[j + Offset];
-			}
 			Offset += HiscoreMemRange[i].NumBytes;
 			
 			HiscoreMemRange[i].Loaded = 1;
 		}
 		
-		if (Buffer) {
+		if (Buffer)
+		{
 			free(Buffer);
 			Buffer = NULL;
 		}
@@ -276,7 +219,7 @@ void HiscoreReset(void)
 	}
 }
 
-void HiscoreApply()
+void HiscoreApply(void)
 {
 	if (!CheckHiscoreAllowed() || !HiscoresInUse) return;
 	
@@ -330,16 +273,12 @@ void HiscoreExit(void)
 	if (nCpuType == -1) set_cpu_type();
 	
 	TCHAR szFilename[MAX_PATH];
-#ifdef __LIBRETRO__
 #ifdef _WIN32
    char slash = '\\';
 #else
    char slash = '/';
 #endif
 	snprintf(szFilename, sizeof(szFilename), "%s%c%s.hi", g_save_dir, slash, BurnDrvGetText(DRV_NAME));
-#else
-	_stprintf(szFilename, _T("%s%s.hi"), szAppHiscorePath, BurnDrvGetText(DRV_NAME));
-#endif
 
 	FILE *fp = _tfopen(szFilename, _T("w"));
 	if (fp) {
