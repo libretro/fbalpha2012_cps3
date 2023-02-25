@@ -726,27 +726,26 @@ void __fastcall cps3WriteWord(UINT32 addr, UINT16 data)
 	}
 }
 
-void __fastcall cps3WriteLong(UINT32 addr, UINT32 data)
+static void __fastcall cps3WriteLong(UINT32 addr, UINT32 data)
 {
 	addr &= 0xc7ffffff;
 }
 
-void __fastcall cps3C0WriteByte(UINT32 addr, UINT8 data) { }
-void __fastcall cps3C0WriteWord(UINT32 addr, UINT16 data) { }
+static void __fastcall cps3C0WriteByte(UINT32 addr, UINT8 data) { }
+static void __fastcall cps3C0WriteWord(UINT32 addr, UINT16 data) { }
 
-void __fastcall cps3C0WriteLong(UINT32 addr, UINT32 data)
+static void __fastcall cps3C0WriteLong(UINT32 addr, UINT32 data)
 {
 	if (addr < 0xc0000400)
 	{
 		*(UINT32 *)(RamC000 + (addr & 0x3ff)) = data;
 		*(UINT32 *)(RamC000_D + (addr & 0x3ff)) = data ^ cps3_mask(addr, cps3_key1, cps3_key2);
-		return ;
 	}
 }
 
 // If fastboot != 1 
 
-UINT8 __fastcall cps3RomReadByte(UINT32 addr)
+static UINT8 __fastcall cps3RomReadByte(UINT32 addr)
 {
 	addr &= 0xc7ffffff;
 #ifndef MSB_FIRST
@@ -755,7 +754,7 @@ UINT8 __fastcall cps3RomReadByte(UINT32 addr)
 	return *(RomGame_D + (addr & 0x00ffffff));
 }
 
-UINT16 __fastcall cps3RomReadWord(UINT32 addr)
+static UINT16 __fastcall cps3RomReadWord(UINT32 addr)
 {
 	addr &= 0xc7ffffff;
 #ifndef MSB_FIRST
@@ -764,7 +763,7 @@ UINT16 __fastcall cps3RomReadWord(UINT32 addr)
 	return *(UINT16 *)(RomGame_D + (addr & 0x00ffffff));
 }
 
-UINT32 __fastcall cps3RomReadLong(UINT32 addr)
+static UINT32 __fastcall cps3RomReadLong(UINT32 addr)
 {
 	addr &= 0xc7ffffff;
 	
@@ -780,10 +779,10 @@ UINT32 __fastcall cps3RomReadLong(UINT32 addr)
 	return retvalue;
 }
 
-void __fastcall cps3RomWriteByte(UINT32 addr, UINT8 data) { }
-void __fastcall cps3RomWriteWord(UINT32 addr, UINT16 data) { }
+static void __fastcall cps3RomWriteByte(UINT32 addr, UINT8 data) { }
+static void __fastcall cps3RomWriteWord(UINT32 addr, UINT16 data) { }
 
-void __fastcall cps3RomWriteLong(UINT32 addr, UINT32 data)
+static void __fastcall cps3RomWriteLong(UINT32 addr, UINT32 data)
 {
 #ifdef WII_VM
 	if(BurnCreateCache)
@@ -799,7 +798,7 @@ void __fastcall cps3RomWriteLong(UINT32 addr, UINT32 data)
 	}
 }
 
-UINT8 __fastcall cps3RomReadByteSpe(UINT32 addr)
+static UINT8 __fastcall cps3RomReadByteSpe(UINT32 addr)
 {
 	addr &= 0xc7ffffff;
 #ifndef MSB_FIRST
@@ -808,7 +807,7 @@ UINT8 __fastcall cps3RomReadByteSpe(UINT32 addr)
 	return *(RomGame + (addr & 0x00ffffff));
 }
 
-UINT16 __fastcall cps3RomReadWordSpe(UINT32 addr)
+static UINT16 __fastcall cps3RomReadWordSpe(UINT32 addr)
 {
 	addr &= 0xc7ffffff;
 #ifndef MSB_FIRST
@@ -817,7 +816,7 @@ UINT16 __fastcall cps3RomReadWordSpe(UINT32 addr)
 	return *(UINT16 *)(RomGame + (addr & 0x00ffffff));
 }
 
-UINT32 __fastcall cps3RomReadLongSpe(UINT32 addr)
+static UINT32 __fastcall cps3RomReadLongSpe(UINT32 addr)
 {
 	addr &= 0xc7ffffff;
 	
@@ -1167,9 +1166,7 @@ INT32 cps3Init(void)
 
 #ifdef WII_VM
 	if(BurnCreateCache)
-	{
 		CacheHandle(Cache, CacheRead, "", WRITE);
-	}
 #endif
 	Cps3Reset();
 	return 0;
@@ -1601,10 +1598,7 @@ static void cps3_draw_tilemapsprite_line(INT32 drawline, UINT32 * regs )
 		INT32 scrollx     =  (regs[0]&0xffff0000)>>16;
 
 		if (linescroll_enable)
-		{
-			scrollx   = (regs[0]&0xffff0000)>>16;
 			scrollx  += (RamSpr[linebase+((line+16-4)&0x3ff)]>>16)&0x3ff;
-		}
 
 		if (drawline>cps3_gfx_max_y+4)
 			return;
