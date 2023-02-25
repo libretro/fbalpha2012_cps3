@@ -81,8 +81,6 @@ extern INT32 EnableHiscores;
 #define STAT_SMALL   3
 #define STAT_LARGE   4
 
-static int descriptor_id = 0;
-
 struct ROMFIND
 {
 	unsigned int nState;
