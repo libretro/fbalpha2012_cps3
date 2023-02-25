@@ -88,9 +88,6 @@ extern INT32 (__cdecl *BurnExtLoadRom)(UINT8* Dest, INT32* pnWrote, INT32 i);
 extern INT32 (__cdecl *BurnExtProgressRangeCallback)(double dProgressRange);
 extern INT32 (__cdecl *BurnExtProgressUpdateCallback)(double dProgress, const TCHAR* pszText, bool bAbs);
 
-// Application-defined colour conversion function
-extern UINT32 (__cdecl *BurnHighCol) (INT32 r, INT32 g, INT32 b, INT32 i);
-
 // ---------------------------------------------------------------------------
 
 extern UINT32 nCurrentFrame;
@@ -244,9 +241,6 @@ INT32 BurnDrvGetGenreFlags();
 INT32 BurnDrvGetFamilyFlags();
 
 void Reinitialise();
-
-extern bool bDoIpsPatch;
-void IpsApplyPatches(UINT8* base, char* rom_name);
 
 // ---------------------------------------------------------------------------
 // Flags used with the Burndriver structure

@@ -22,20 +22,20 @@ unsigned int CacheSize;
 #endif
 
 #if defined(_XBOX) || defined(_WIN32)
-   char slash = '\\';
+char slash = '\\';
 #else
-   char slash = '/';
+char slash = '/';
 #endif
 
 static void log_dummy(enum retro_log_level level, const char *fmt, ...) { }
 static const char *print_label(unsigned i);
 
-static void set_environment();
+static void set_environment(void);
 static bool apply_dipswitch_from_variables();
 
 static void init_audio_buffer(INT32 sample_rate, INT32 fps);
 
-static void set_input_descriptors();
+static void set_input_descriptors(void);
 
 static retro_environment_t environ_cb;
 static retro_log_printf_t log_cb = log_dummy;
@@ -153,22 +153,11 @@ void retro_get_system_info(struct retro_system_info *info)
 }
 
 /////
-static void InputTick();
 static void InputMake();
 static bool init_input();
 static void check_variables();
 
-void wav_exit() { }
-
-// FBA stubs
-unsigned ArcadeJoystick;
-
 int bDrvOkay;
-int bRunPause;
-bool bAlwaysProcessKeyboardInput;
-
-bool bDoIpsPatch;
-void IpsApplyPatches(UINT8 *, char *) {}
 
 TCHAR szAppHiscorePath[MAX_PATH];
 TCHAR szAppBurnVer[16];
@@ -257,8 +246,6 @@ static int InpDIPSWInit(void)
    dipswitch_core_options.clear();
 
    BurnDIPInfo bdi;
-   struct GameInp *pgi;
-
    const char * drvname = BurnDrvGetTextA(DRV_NAME);
    
    if (!drvname)
@@ -375,8 +362,6 @@ static int InpDIPSWInit(void)
             dipswitch_core_options.pop_back();
             continue;
          }
-
-         pgi = GameInp + bdi.nInput + nDIPOffset;
 
          // Create the string values for the core option
          dip_option->values_str.assign(dip_option->friendly_name);
@@ -1216,23 +1201,6 @@ static bool fba_init(unsigned driver, const char *game_zip_name)
    return true;
 }
 
-#if defined(FRONTEND_SUPPORTS_RGB565)
-static unsigned int HighCol16(int r, int g, int b, int  /* i */)
-{
-   return (((r << 8) & 0xf800) | ((g << 3) & 0x07e0) | ((b >> 3) & 0x001f));
-}
-#else
-static unsigned int HighCol15(int r, int g, int b, int  /* i */)
-{
-   return (((r << 7) & 0x7c00) | ((g << 2) & 0x03e0) | ((b >> 3) & 0x001f));
-}
-#endif
-
-
-static void init_video()
-{
-}
-
 static void init_audio_buffer(INT32 sample_rate, INT32 fps)
 {
 	// [issue #206]
@@ -1327,9 +1295,6 @@ bool retro_load_game(const struct retro_game_info *info)
    if (i < nBurnDrvCount)
    {
       INT32 width, height;
-
-      const char * boardrom = BurnDrvGetTextA(DRV_BOARDROM);
-
       set_environment();
       check_variables();
 
@@ -1436,24 +1401,6 @@ static bool init_input(void)
          break;
       }
    }
-
-   // Needed for Neo Geo button mappings (and other drivers in future)
-   const char * parentrom  = BurnDrvGetTextA(DRV_PARENT);
-   const char * boardrom   = BurnDrvGetTextA(DRV_BOARDROM);
-   const char * drvname    = BurnDrvGetTextA(DRV_NAME);
-   const char * systemname = BurnDrvGetTextA(DRV_SYSTEM);
-   INT32	genre		= BurnDrvGetGenreFlags();
-   INT32	hardware	= BurnDrvGetHardwareCode();
-
-   log_cb(RETRO_LOG_INFO, "drvname: %s\n", drvname);
-   if(parentrom)
-      log_cb(RETRO_LOG_INFO, "parentrom: %s\n", parentrom);
-   if(boardrom)
-      log_cb(RETRO_LOG_INFO, "boardrom: %s\n", boardrom);
-   if (systemname)
-      log_cb(RETRO_LOG_INFO, "systemname: %s\n", systemname);
-   log_cb(RETRO_LOG_INFO, "genre: %d\n", genre);
-   log_cb(RETRO_LOG_INFO, "hardware: %d\n", hardware);
 
    /* initialization */
    struct BurnInputInfo bii;

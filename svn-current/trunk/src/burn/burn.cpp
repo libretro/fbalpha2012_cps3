@@ -59,13 +59,13 @@ INT32 BurnGetZipName(char** pszName, UINT32 i)
 	static char szFilename[MAX_PATH];
 	char* pszGameName = NULL;
 
-	if (pszName == NULL) {
+	if (pszName == NULL)
 		return 1;
-	}
 
-	if (i == 0) {
+	if (i == 0)
 		pszGameName = pDriver[nBurnDrvActive]->szShortName;
-	} else {
+	else
+	{
 		INT32 nOldBurnDrvSelect = nBurnDrvActive;
 		UINT32 j = pDriver[nBurnDrvActive]->szBoardROM ? 1 : 0;
 
@@ -604,19 +604,15 @@ INT32 (__cdecl *BurnExtProgressUpdateCallback)(double fProgress, const TCHAR* ps
 
 INT32 BurnSetProgressRange(double fProgressRange)
 {
-	if (BurnExtProgressRangeCallback) {
+	if (BurnExtProgressRangeCallback)
 		return BurnExtProgressRangeCallback(fProgressRange);
-	}
-
 	return 1;
 }
 
 INT32 BurnUpdateProgress(double fProgress, const TCHAR* pszText, bool bAbs)
 {
-	if (BurnExtProgressUpdateCallback) {
+	if (BurnExtProgressUpdateCallback)
 		return BurnExtProgressUpdateCallback(fProgress, pszText, bAbs);
-	}
-
 	return 1;
 }
 
@@ -631,10 +627,6 @@ INT32 BurnSetRefreshRate(double dFrameRate)
 // Application-defined rom loading function:
 INT32 (__cdecl *BurnExtLoadRom)(UINT8 *Dest, INT32 *pnWrote, INT32 i) = NULL;
 
-// Application-defined colour conversion function
-static UINT32 __cdecl BurnHighColFiller(INT32, INT32, INT32, INT32) { return (UINT32)(~0); }
-UINT32 (__cdecl *BurnHighCol) (INT32 r, INT32 g, INT32 b, INT32 i) = BurnHighColFiller;
-
 // ----------------------------------------------------------------------------
 // Savestate support
 
@@ -646,17 +638,12 @@ INT32 (__cdecl *BurnAcb) (struct BurnArea* pba) = DefAcb;
 INT32 BurnAreaScan(INT32 nAction, INT32* pnMin)
 {
 	INT32 nRet = 0;
-
 	// Handle any MAME-style variables
-	if (nAction & ACB_DRIVER_DATA) {
+	if (nAction & ACB_DRIVER_DATA)
 		nRet = BurnStateMAMEScan(nAction, pnMin);
-	}
-
 	// Forward to the driver
-	if (pDriver[nBurnDrvActive]->AreaScan) {
+	if (pDriver[nBurnDrvActive]->AreaScan)
 		nRet |= pDriver[nBurnDrvActive]->AreaScan(nAction, pnMin);
-	}
-
 	return nRet;
 }
 

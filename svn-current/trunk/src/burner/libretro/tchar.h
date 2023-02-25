@@ -51,9 +51,6 @@ extern TCHAR szAppBurnVer[16];
 
 typedef int HWND;
 
-extern int bDrvOkay;
-extern int bRunPause;
-extern bool bAlwaysProcessKeyboardInput;
 extern HWND hScrnWnd;		// Handle to the screen window
 
 extern void InpDIPSWResetDIPs (void);
