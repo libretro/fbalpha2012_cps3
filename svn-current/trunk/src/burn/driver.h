@@ -33,41 +33,5 @@ typedef unsigned __int64					UINT64;
 __extension__ typedef unsigned long long	UINT64;
 __extension__ typedef long long				INT64;
 #endif
-#define OSD_CPU_H
-
-/* OPN */
-#define HAS_YM2203  1
-#define HAS_YM2608  1
-#define HAS_YM2610  1
-#define HAS_YM2610B 1
-#define HAS_YM2612  1
-#define HAS_YM3438  1
-/* OPL */
-#define HAS_YM3812  1
-#define HAS_YM3526  1
-#define HAS_Y8950   1
-
-enum {
-	CLEAR_LINE = 0,
-	ASSERT_LINE,
-	HOLD_LINE,
-	PULSE_LINE
-};
-
-#define timer_get_time() BurnTimerGetTime()
-
-#define READ8_HANDLER(name) 	UINT8 name(void)
-#define WRITE8_HANDLER(name) 	void  name(UINT8 data)
-
-#ifdef __cplusplus
- extern "C" {
-#endif
-  double BurnTimerGetTime(void);
-
-  typedef UINT8 (*read8_handler)(UINT32 offset);
-  typedef void (*write8_handler)(UINT32 offset, UINT32 data);
-#ifdef __cplusplus
- }
-#endif
 
 #endif /* DRIVER_H */

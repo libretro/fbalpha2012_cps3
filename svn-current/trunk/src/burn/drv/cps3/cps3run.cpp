@@ -272,41 +272,31 @@ static INT32 last_normal_byte = 0;
 static UINT32 process_byte( UINT8 real_byte, UINT32 destination, INT32 max_length )
 {
 	UINT8 * dest = (UINT8 *) RamCRam;
-	//printf("process byte for destination %08x\n", destination);
 	destination &= 0x7fffff;
 
 	if (real_byte&0x40) {
 		INT32 tranfercount = 0;
-		//printf("Set RLE Mode\n");
 		INT32 cps3_rle_length = (real_byte&0x3f)+1;
-		//printf("RLE Operation (length %08x\n", cps3_rle_length );
-		while (cps3_rle_length) {
+		while (cps3_rle_length)
+		{
 #if BE_GFX
 			dest[((destination+tranfercount)&0x7fffff)] = (last_normal_byte&0x3f);
 #else
 			dest[((destination+tranfercount)&0x7fffff)^3] = (last_normal_byte&0x3f);
 #endif
-			//cps3_char_ram_dirty[((destination+tranfercount)&0x7fffff)/0x100] = 1;
-			//cps3_char_ram_is_dirty = 1;
-			//printf("RLE WRite Byte %08x, %02x\n", destination+tranfercount, real_byte);
-
 			tranfercount++;
 			cps3_rle_length--;
 			max_length--;
 			if ((destination+tranfercount) > 0x7fffff)  return max_length;
-	//      if (max_length==0) return max_length; // this is meant to abort the transfer if we exceed dest length,, not working
 		}
 		return tranfercount;
 	} else {
-		//printf("Write Normal Data\n");
 #if BE_GFX
 		dest[(destination&0x7fffff)] = real_byte;
 #else
 		dest[(destination&0x7fffff)^3] = real_byte;
 #endif
 		last_normal_byte = real_byte;
-		//cps3_char_ram_dirty[(destination&0x7fffff)/0x100] = 1;
-		//cps3_char_ram_is_dirty = 1;
 		return 1;
 	}
 }
@@ -1075,9 +1065,9 @@ if(BurnCreateCache)
 			snprintf(txt, sizeof(txt), "Loading Graphic and Sound in VM: %d/%d MB", CacheRead - (PRG_size/(1*MB)), step);
 			CacheHandle(Cache, CacheRead, txt, SHOW);
 #endif
-		} else {
-			ii++;
 		}
+		else
+			ii++;
 	}
 }
 #ifdef WII_VM

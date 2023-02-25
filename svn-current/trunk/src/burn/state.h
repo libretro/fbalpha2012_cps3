@@ -54,22 +54,6 @@ C_INLINE static void ScanVar(void* pv, INT32 nSize, char* szName)
 
 #define SCAN_OFF(x, y, a) { INT32 n = y - x; ScanVar(&n, sizeof(n), #x); if (a & ACB_WRITE) {	x = y + n; } }
 
-#ifdef OSD_CPU_H
- /* wrappers for the MAME savestate functions (used by the FM sound cores) */
- void state_save_register_func_postload(void (*pFunction)());
-
- void state_save_register_INT8(const char* module, INT32 instance, const char* name, INT8* val, unsigned size);
- void state_save_register_UINT8(const char* module, INT32 instance, const char* name, UINT8* val, unsigned size);
- void state_save_register_INT16(const char* module, INT32 instance, const char* name, INT16* val, unsigned size);
- void state_save_register_UINT16(const char* module, INT32 instance, const char* name, UINT16* val, unsigned size);
- void state_save_register_INT32(const char* module, INT32 instance, const char* name, INT32* val, unsigned size);
- void state_save_register_UINT32(const char* module, INT32 instance, const char* name, UINT32* val, unsigned size);
-
- void state_save_register_int(const char* module, INT32 instance, const char* name, INT32* val);
- void state_save_register_float(const char* module, INT32 instance, const char* name, float* val, unsigned size);
- void state_save_register_double(const char* module, INT32 instance, const char* name, double* val, unsigned size);
-#endif
-
 #ifdef __cplusplus
  }
 #endif

@@ -10,7 +10,7 @@
 #include <string.h>
 #include <assert.h>
 
-#if defined(__LIBRETRO__) && defined(_MSC_VER)
+#if defined(_MSC_VER)
 #include <tchar.h>
 #else
 #include "tchar.h"
@@ -105,41 +105,9 @@ struct BurnDriver {
 
 // burn.cpp
 INT32 BurnSetRefreshRate(double dRefreshRate);
-INT32 BurnByteswap(UINT8* pm,INT32 nLen);
-INT32 BurnClearScreen();
 
 // load.cpp
 INT32 BurnLoadRom(UINT8* Dest, INT32 i, INT32 nGap);
-INT32 BurnXorRom(UINT8* Dest, INT32 i, INT32 nGap);
-INT32 BurnLoadBitField(UINT8* pDest, UINT8* pSrc, INT32 nField, INT32 nSrcLen);
-
-// ---------------------------------------------------------------------------
-// Colour-depth independant image transfer
-
-extern UINT16* pTransDraw;
-
-void BurnTransferClear();
-INT32 BurnTransferCopy(UINT32* pPalette);
-void BurnTransferExit();
-INT32 BurnTransferInit();
-
-// ---------------------------------------------------------------------------
-// Plotting pixels
-
-inline static void PutPix(UINT8* pPix, UINT32 c)
-{
-	if (nBurnBpp >= 4) {
-		*((UINT32*)pPix) = c;
-	} else {
-		if (nBurnBpp == 2) {
-			*((UINT16*)pPix) = (UINT16)c;
-		} else {
-			pPix[0] = (UINT8)(c >>  0);
-			pPix[1] = (UINT8)(c >>  8);
-			pPix[2] = (UINT8)(c >> 16);
-		}
-	}
-}
 
 // ---------------------------------------------------------------------------
 // Setting up cpus for cheats
@@ -169,7 +137,7 @@ void BurnInitMemoryManager();
 UINT8 *BurnMalloc(INT32 size);
 void _BurnFree(void *ptr);
 #define BurnFree(x)		_BurnFree(x); x = NULL;
-void BurnExitMemoryManager();
+void BurnExitMemoryManager(void);
 
 // ---------------------------------------------------------------------------
 // Sound clipping macro
@@ -179,64 +147,5 @@ void BurnExitMemoryManager();
 #define BURN_SND_ROUTE_LEFT			1
 #define BURN_SND_ROUTE_RIGHT		2
 #define BURN_SND_ROUTE_BOTH			(BURN_SND_ROUTE_LEFT | BURN_SND_ROUTE_RIGHT)
-
-// ---------------------------------------------------------------------------
-// Debug Tracker
-
-extern UINT8 Debug_GenericTilesInitted;
-
-extern UINT8 DebugDev_8255PPIInitted;
-extern UINT8 DebugDev_PandoraInitted;
-extern UINT8 DebugDev_SeibuSndInitted;
-extern UINT8 DebugDev_TimeKprInitted;
-
-extern UINT8 DebugSnd_AY8910Initted;
-extern UINT8 DebugSnd_Y8950Initted;
-extern UINT8 DebugSnd_YM2151Initted;
-extern UINT8 DebugSnd_YM2203Initted;
-extern UINT8 DebugSnd_YM2413Initted;
-extern UINT8 DebugSnd_YM2608Initted;
-extern UINT8 DebugSnd_YM2610Initted;
-extern UINT8 DebugSnd_YM2612Initted;
-extern UINT8 DebugSnd_YM3526Initted;
-extern UINT8 DebugSnd_YM3812Initted;
-extern UINT8 DebugSnd_YMF278BInitted;
-extern UINT8 DebugSnd_DACInitted;
-extern UINT8 DebugSnd_ES5506Initted;
-extern UINT8 DebugSnd_ES8712Initted;
-extern UINT8 DebugSnd_FilterRCInitted;
-extern UINT8 DebugSnd_ICS2115Initted;
-extern UINT8 DebugSnd_IremGA20Initted;
-extern UINT8 DebugSnd_K007232Initted;
-extern UINT8 DebugSnd_K051649Initted;
-extern UINT8 DebugSnd_K053260Initted;
-extern UINT8 DebugSnd_K054539Initted;
-extern UINT8 DebugSnd_MSM5205Initted;
-extern UINT8 DebugSnd_MSM6295Initted;
-extern UINT8 DebugSnd_NamcoSndInitted;
-extern UINT8 DebugSnd_RF5C68Initted;
-extern UINT8 DebugSnd_SAA1099Initted;
-extern UINT8 DebugSnd_SamplesInitted;
-extern UINT8 DebugSnd_SegaPCMInitted;
-extern UINT8 DebugSnd_SN76496Initted;
-extern UINT8 DebugSnd_UPD7759Initted;
-extern UINT8 DebugSnd_X1010Initted;
-extern UINT8 DebugSnd_YMZ280BInitted;
-
-extern UINT8 DebugCPU_ARM7Initted;
-extern UINT8 DebugCPU_ARMInitted;
-extern UINT8 DebugCPU_H6280Initted;
-extern UINT8 DebugCPU_HD6309Initted;
-extern UINT8 DebugCPU_KonamiInitted;
-extern UINT8 DebugCPU_M6502Initted;
-extern UINT8 DebugCPU_M6800Initted;
-extern UINT8 DebugCPU_M6805Initted;
-extern UINT8 DebugCPU_M6809Initted;
-extern UINT8 DebugCPU_S2650Initted;
-extern UINT8 DebugCPU_SekInitted;
-extern UINT8 DebugCPU_VezInitted;
-extern UINT8 DebugCPU_ZetInitted;
-extern UINT8 DebugCPU_PIC16C5XInitted;
-extern UINT8 DebugCPU_I8039Initted;
 
 #endif

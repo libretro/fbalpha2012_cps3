@@ -2,7 +2,6 @@
 
 #include "version.h"
 #include "burnint.h"
-#include "burn_sound.h"
 #include "driverlist.h"
 
 INT32 nBurnVer = BURN_VERSION;		// Version number of the library
@@ -11,22 +10,14 @@ UINT32 nBurnDrvCount = 0;		// Count of game drivers
 UINT32 nBurnDrvActive = ~0U;	// Which game driver is selected
 UINT32 nBurnDrvSelect[8] = { ~0U, ~0U, ~0U, ~0U, ~0U, ~0U, ~0U, ~0U }; // Which games are selected (i.e. loaded but not necessarily active)
 									
-bool bBurnUseMMX;
 #if defined BUILD_A68K
 bool bBurnUseASMCPUEmulation = true;
 #else
 bool bBurnUseASMCPUEmulation = false;
 #endif
 
-#if defined (FBA_DEBUG)
- clock_t starttime = 0;
-#endif
-
 UINT32 nCurrentFrame;			// Framecount for emulated game
 
-UINT32 nFramesEmulated;		// Counters for FPS	display
-UINT32 nFramesRendered;		//
-bool bForce60Hz = false;
 INT32 nBurnFPS = 6000;
 INT32 nBurnCPUSpeedAdjust = 0x0100;	// CPU speed adjustment (clock * nBurnCPUSpeedAdjust / 0x0100)
 
@@ -47,31 +38,12 @@ UINT8 nSpriteEnable = 0xFF;	// Can be used externally to select which layers to 
 
 INT32 nMaxPlayers;
 
-bool bSaveCRoms = 0;
-
 UINT32 *pBurnDrvPalette;
-
-bool BurnCheckMMXSupport()
-{
-#if defined BUILD_X86_ASM
-	UINT32 nSignatureEAX = 0, nSignatureEBX = 0, nSignatureECX = 0, nSignatureEDX = 0;
-
-	CPUID(1, nSignatureEAX, nSignatureEBX, nSignatureECX, nSignatureEDX);
-
-	return (nSignatureEDX >> 23) & 1;						// bit 23 of edx indicates MMX support
-#else
-	return 0;
-#endif
-}
 
 extern "C" INT32 BurnLibInit()
 {
 	BurnLibExit();
 	nBurnDrvCount = sizeof(pDriver) / sizeof(pDriver[0]);	// count available drivers
-
-	cmc_4p_Precalc();
-	bBurnUseMMX = BurnCheckMMXSupport();
-
 	return 0;
 }
 
@@ -400,21 +372,10 @@ extern "C" char* BurnDrvGetTextA(UINT32 i)
 		case DRV_SAMPLENAME:
 			return pDriver[nBurnDrvActive]->szSampleName;
 		default:
-			return NULL;
+			break;
 	}
+	return NULL;
 }
-
-#if defined (_UNICODE)
-void BurnLocalisationSetName(char *szName, TCHAR *szLongName)
-{
-	for (UINT32 i = 0; i < nBurnDrvCount; i++) {
-		nBurnDrvActive = i;
-		if (!strcmp(szName, pDriver[i]->szShortName)) {
-			pDriver[i]->szFullNameW = szLongName;
-		}
-	}
-}
-#endif
 
 // Get the zip names for the driver
 extern "C" INT32 BurnDrvGetZipName(char** pszName, UINT32 i)
@@ -443,21 +404,10 @@ extern "C" INT32 BurnDrvGetInputInfo(struct BurnInputInfo* pii, UINT32 i)	// For
 
 extern "C" INT32 BurnDrvGetDIPInfo(struct BurnDIPInfo* pdi, UINT32 i)
 {
-	if (pDriver[nBurnDrvActive]->GetDIPInfo) {									// Forward to drivers function
+	// Forward to drivers function
+	if (pDriver[nBurnDrvActive]->GetDIPInfo)
 		return pDriver[nBurnDrvActive]->GetDIPInfo(pdi, i);
-	}
-
-	return 1;																	// Fail automatically
-}
-
-extern "C" INT32 BurnDrvGetSampleInfo(struct BurnSampleInfo* pri, UINT32 i)		// Forward to drivers function
-{
-	return pDriver[nBurnDrvActive]->GetSampleInfo(pri, i);
-}
-
-extern "C" INT32 BurnDrvGetSampleName(char** pszName, UINT32 i, INT32 nAka)		// Forward to drivers function
-{
-	return pDriver[nBurnDrvActive]->GetSampleName(pszName, i, nAka);
+	return 1; // Fail automatically
 }
 
 // Get the screen size
@@ -561,9 +511,8 @@ extern "C" INT32 BurnDrvInit()
 {
 	INT32 nReturnValue;
 
-	if (nBurnDrvActive >= nBurnDrvCount) {
+	if (nBurnDrvActive >= nBurnDrvCount)
 		return 1;
-	}
 
 #if defined (FBA_DEBUG)
 	{
@@ -603,21 +552,15 @@ extern "C" INT32 BurnDrvInit()
 	nMaxPlayers = pDriver[nBurnDrvActive]->Players;
 	
 #if defined (FBA_DEBUG)
-	if (!nReturnValue) {
-		starttime = clock();
-		nFramesEmulated = 0;
-		nFramesRendered = 0;
+	if (!nReturnValue)
 		nCurrentFrame = 0;
-	} else {
-		starttime = 0;
-	}
 #endif
 
 	return nReturnValue;
 }
 
 // Exit game emulation
-extern "C" INT32 BurnDrvExit()
+extern "C" INT32 BurnDrvExit(void)
 {
 	CheatExit();
 	CheatSearchExit();
@@ -634,46 +577,12 @@ extern "C" INT32 BurnDrvExit()
 	return nRet;
 }
 
-INT32 (__cdecl* BurnExtCartridgeSetupCallback)(BurnCartrigeCommand nCommand) = NULL;
-
-INT32 BurnDrvCartridgeSetup(BurnCartrigeCommand nCommand)
-{
-	if (nBurnDrvActive >= nBurnDrvCount || BurnExtCartridgeSetupCallback == NULL)
-		return 1;
-
-	if (nCommand == CART_EXIT)
-		return pDriver[nBurnDrvActive]->Exit();
-
-	if (nCommand != CART_INIT_END && nCommand != CART_INIT_START)
-		return 1;
-
-	BurnExtCartridgeSetupCallback(CART_INIT_END);
-
-	if (BurnExtCartridgeSetupCallback(CART_INIT_START))
-		return 1;
-
-	if (nCommand == CART_INIT_START)
-		return pDriver[nBurnDrvActive]->Init();
-
-	return 0;
-}
-
 // Do one frame of game emulation
 extern "C" INT32 BurnDrvFrame()
 {
 	CheatApply();									// Apply cheats (if any)
 	HiscoreApply();
 	return pDriver[nBurnDrvActive]->Frame();		// Forward to drivers function
-}
-
-// Force redraw of the screen
-extern "C" INT32 BurnDrvRedraw()
-{
-	if (pDriver[nBurnDrvActive]->Redraw) {
-		return pDriver[nBurnDrvActive]->Redraw();	// Forward to drivers function
-	}
-
-	return 1;										// No funtion provide, so simply return
 }
 
 // Refresh Palette
@@ -686,11 +595,6 @@ extern "C" INT32 BurnRecalcPal()
 	}
 
 	return 0;
-}
-
-extern "C" INT32 BurnDrvGetPaletteEntries()
-{
-	return pDriver[nBurnDrvActive]->nPaletteEntries;
 }
 
 // ----------------------------------------------------------------------------
@@ -720,51 +624,7 @@ INT32 BurnUpdateProgress(double fProgress, const TCHAR* pszText, bool bAbs)
 
 INT32 BurnSetRefreshRate(double dFrameRate)
 {
-	if (!bForce60Hz) {
-		nBurnFPS = (INT32)(100.0 * dFrameRate);
-	}
-
-	return 0;
-}
-
-inline static INT32 BurnClearSize(INT32 w, INT32 h)
-{
-	UINT8 *pl;
-	INT32 y;
-
-	w *= nBurnBpp;
-
-	// clear the screen to zero
-	for (pl = pBurnDraw, y = 0; y < h; pl += nBurnPitch, y++) {
-		memset(pl, 0x00, w);
-	}
-
-	return 0;
-}
-
-INT32 BurnClearScreen()
-{
-	struct BurnDriver* pbd = pDriver[nBurnDrvActive];
-
-	if (pbd->Flags & BDF_ORIENTATION_VERTICAL) {
-		BurnClearSize(pbd->nHeight, pbd->nWidth);
-	} else {
-		BurnClearSize(pbd->nWidth, pbd->nHeight);
-	}
-
-	return 0;
-}
-
-// Byteswaps an area of memory
-INT32 BurnByteswap(UINT8* pMem, INT32 nLen)
-{
-	nLen >>= 1;
-	for (INT32 i = 0; i < nLen; i++, pMem += 2) {
-		UINT8 t = pMem[0];
-		pMem[0] = pMem[1];
-		pMem[1] = t;
-	}
-
+	nBurnFPS = (INT32)(100.0 * dFrameRate);
 	return 0;
 }
 
@@ -774,85 +634,6 @@ INT32 (__cdecl *BurnExtLoadRom)(UINT8 *Dest, INT32 *pnWrote, INT32 i) = NULL;
 // Application-defined colour conversion function
 static UINT32 __cdecl BurnHighColFiller(INT32, INT32, INT32, INT32) { return (UINT32)(~0); }
 UINT32 (__cdecl *BurnHighCol) (INT32 r, INT32 g, INT32 b, INT32 i) = BurnHighColFiller;
-
-// ----------------------------------------------------------------------------
-// Colour-depth independant image transfer
-
-UINT16* pTransDraw = NULL;
-
-static INT32 nTransWidth, nTransHeight;
-
-void BurnTransferClear()
-{
-	memset((void*)pTransDraw, 0, nTransWidth * nTransHeight * sizeof(UINT16));
-}
-
-INT32 BurnTransferCopy(UINT32* pPalette)
-{
-	UINT16* pSrc = pTransDraw;
-	UINT8* pDest = pBurnDraw;
-	
-	pBurnDrvPalette = pPalette;
-
-	switch (nBurnBpp) {
-		case 2: {
-			for (INT32 y = 0; y < nTransHeight; y++, pSrc += nTransWidth, pDest += nBurnPitch) {
-				for (INT32 x = 0; x < nTransWidth; x ++) {
-					((UINT16*)pDest)[x] = pPalette[pSrc[x]];
-				}
-			}
-			break;
-		}
-		case 3: {
-			for (INT32 y = 0; y < nTransHeight; y++, pSrc += nTransWidth, pDest += nBurnPitch) {
-				for (INT32 x = 0; x < nTransWidth; x++) {
-					UINT32 c = pPalette[pSrc[x]];
-					*(pDest + (x * 3) + 0) = c & 0xFF;
-					*(pDest + (x * 3) + 1) = (c >> 8) & 0xFF;
-					*(pDest + (x * 3) + 2) = c >> 16;
-
-				}
-			}
-			break;
-		}
-		case 4: {
-			for (INT32 y = 0; y < nTransHeight; y++, pSrc += nTransWidth, pDest += nBurnPitch) {
-				for (INT32 x = 0; x < nTransWidth; x++) {
-					((UINT32*)pDest)[x] = pPalette[pSrc[x]];
-				}
-			}
-			break;
-		}
-	}
-
-	return 0;
-}
-
-void BurnTransferExit()
-{
-	if (pTransDraw) {
-		free(pTransDraw);
-		pTransDraw = NULL;
-	}
-}
-
-INT32 BurnTransferInit()
-{
-	if (BurnDrvGetFlags() & BDF_ORIENTATION_VERTICAL)
-		BurnDrvGetVisibleSize(&nTransHeight, &nTransWidth);
-	else
-		BurnDrvGetVisibleSize(&nTransWidth, &nTransHeight);
-
-	pTransDraw = (UINT16*)malloc(nTransWidth * nTransHeight * sizeof(UINT16));
-	if (pTransDraw == NULL)
-		return 1;
-
-	BurnTransferClear();
-
-	return 0;
-}
-
-
 
 // ----------------------------------------------------------------------------
 // Savestate support
@@ -893,30 +674,7 @@ static BurnStateEntry* pStateEntryAnchor = NULL;
 typedef void (*BurnPostloadFunction)();
 static BurnPostloadFunction BurnPostload[8];
 
-static void BurnStateRegister(const char* module, INT32 instance, const char* name, void* val, UINT32 size)
-{
-	// Allocate new node
-	BurnStateEntry* pNewEntry = (BurnStateEntry*)malloc(sizeof(BurnStateEntry));
-	if (pNewEntry == NULL) {
-		return;
-	}
-
-	memset(pNewEntry, 0, sizeof(BurnStateEntry));
-
-	// Link the new node
-	pNewEntry->pNext = pStateEntryAnchor;
-	if (pStateEntryAnchor) {
-		pStateEntryAnchor->pPrev = pNewEntry;
-	}
-	pStateEntryAnchor = pNewEntry;
-
-	sprintf(pNewEntry->szName, "%s:%s %i", module, name, instance);
-
-	pNewEntry->pValue = val;
-	pNewEntry->nSize = size;
-}
-
-void BurnStateExit()
+void BurnStateExit(void)
 {
 	if (pStateEntryAnchor) {
 		BurnStateEntry* pCurrentEntry = pStateEntryAnchor;
@@ -937,7 +695,7 @@ void BurnStateExit()
 	}
 }
 
-INT32 BurnStateInit()
+INT32 BurnStateInit(void)
 {
 	BurnStateExit();
 
@@ -976,61 +734,4 @@ INT32 BurnStateMAMEScan(INT32 nAction, INT32* pnMin)
 	}
 
 	return 0;
-}
-
-// wrapper functions
-
-extern "C" void state_save_register_func_postload(void (*pFunction)())
-{
-	for (INT32 i = 0; i < 8; i++) {
-		if (BurnPostload[i] == NULL) {
-			BurnPostload[i] = pFunction;
-			break;
-		}
-	}
-}
-
-extern "C" void state_save_register_INT8(const char* module, INT32 instance, const char* name, INT8* val, UINT32 size)
-{
-	BurnStateRegister(module, instance, name, (void*)val, size * sizeof(INT8));
-}
-
-extern "C" void state_save_register_UINT8(const char* module, INT32 instance, const char* name, UINT8* val, UINT32 size)
-{
-	BurnStateRegister(module, instance, name, (void*)val, size * sizeof(UINT8));
-}
-
-extern "C" void state_save_register_INT16(const char* module, INT32 instance, const char* name, INT16* val, UINT32 size)
-{
-	BurnStateRegister(module, instance, name, (void*)val, size * sizeof(INT16));
-}
-
-extern "C" void state_save_register_UINT16(const char* module, INT32 instance, const char* name, UINT16* val, UINT32 size)
-{
-	BurnStateRegister(module, instance, name, (void*)val, size * sizeof(UINT16));
-}
-
-extern "C" void state_save_register_INT32(const char* module, INT32 instance, const char* name, INT32* val, UINT32 size)
-{
-	BurnStateRegister(module, instance, name, (void*)val, size * sizeof(INT32));
-}
-
-extern "C" void state_save_register_UINT32(const char* module, INT32 instance, const char* name, UINT32* val, UINT32 size)
-{
-	BurnStateRegister(module, instance, name, (void*)val, size * sizeof(UINT32));
-}
-
-extern "C" void state_save_register_int(const char* module, INT32 instance, const char* name, INT32* val)
-{
-	BurnStateRegister(module, instance, name, (void*)val, sizeof(INT32));
-}
-
-extern "C" void state_save_register_float(const char* module, INT32 instance, const char* name, float* val, UINT32 size)
-{
-	BurnStateRegister(module, instance, name, (void*)val, size * sizeof(float));
-}
-
-extern "C" void state_save_register_double(const char* module, INT32 instance, const char* name, double* val, UINT32 size)
-{
-	BurnStateRegister(module, instance, name, (void*)val, size * sizeof(double));
 }

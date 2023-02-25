@@ -98,10 +98,7 @@ WRes File_Read(CSzFile *p, void *data, size_t *size)
 	UINT32 read_length;
 
 	if (!p->_7z_osdfile)
-	{
-		printf("un7z.c: called File_Read without file\n");
 		return 1;
-	}
 
 	size_t originalSize = *size;
 	if (originalSize == 0)
@@ -177,8 +174,6 @@ void FileInStream_CreateVTable(CFileInStream *p)
 
 static size_t FileOutStream_Write(void *, const void *, size_t size)
 {
-//  CFileOutStream *p = (CFileOutStream *)pp;
-//  File_Write(&p->file, data, &size);
   return size;
 }
 
@@ -293,7 +288,6 @@ int _7z_search_crc_match(_7z_file *new_7z, UINT32 search_crc, const char* search
 
 		if (found) 
 		{
-		//	printf("found %S %d %08x %08x %08x %s %d\n", temp, len, crc, search_crc, size, search_filename, search_filename_length);
 			new_7z->curr_file_idx = i;
 			new_7z->uncompressed_length = size;
 			new_7z->crc = crc;

@@ -171,7 +171,6 @@ bool bDoIpsPatch;
 void IpsApplyPatches(UINT8 *, char *) {}
 
 TCHAR szAppHiscorePath[MAX_PATH];
-TCHAR szAppSamplesPath[MAX_PATH];
 TCHAR szAppBurnVer[16];
 
 const char* isowavLBAToMSF(const int LBA) { return ""; }
@@ -538,25 +537,19 @@ char* TCHARToANSI(const TCHAR* pszInString, char* pszOutString, int /*nOutSize*/
    return (char*)pszInString;
 }
 
-int QuoteRead(char **, char **, char*) { return 1; }
-char *LabelCheck(char *, char *) { return 0; }
 const int nConfigMinVersion = 0x020921;
 
 // addition to support loading of roms without crc check
 static int find_rom_by_name(char *name, const ZipEntry *list, unsigned elems)
 {
-	unsigned i = 0;
-	for (i = 0; i < elems; i++)
+   unsigned i = 0;
+   for (i = 0; i < elems; i++)
    {
       if(!strcmp(list[i].szName, name)) 
          return i; 
    }
 
-#if 0
-   log_cb(RETRO_LOG_ERROR, "Not found: %s (name = %s)\n", list[i].szName, name);
-#endif
-
-	return -1;
+   return -1;
 }
 
 static int find_rom_by_crc(uint32_t crc, const ZipEntry *list, unsigned elems)
@@ -570,10 +563,6 @@ static int find_rom_by_crc(uint32_t crc, const ZipEntry *list, unsigned elems)
 	  }
    }
 
-#if 0
-   log_cb(RETRO_LOG_ERROR, "Not found: 0x%X (crc: 0x%X)\n", list[i].nCrc, crc);
-#endif
-   
    return -1;
 }
 
@@ -581,7 +570,8 @@ static void free_archive_list(ZipEntry *list, unsigned count)
 {
    if (list)
    {
-      for (unsigned i = 0; i < count; i++)
+      unsigned i;
+      for (i = 0; i < count; i++)
          free(list[i].szName);
       free(list);
    }
@@ -611,7 +601,7 @@ static int archive_load_rom(uint8_t *dest, int *wrote, int i)
 }
 
 // This code is very confusing. The original code is even more confusing :(
-static bool open_archive()
+static bool open_archive(void)
 {
 	memset(g_find_list, 0, sizeof(g_find_list));
 

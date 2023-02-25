@@ -3061,17 +3061,14 @@ static UINT32 sh2_internal_r(UINT32 offset, UINT32 /*mem_mask*/)
 	case 0x05: // OCRx, TCR, TOCR
 		if(sh2->m[5] & 0x10)
 			return (sh2->ocrb << 16) | (sh2->m[5] & 0xffff);
-		else
-			return (sh2->ocra << 16) | (sh2->m[5] & 0xffff);
+		return (sh2->ocra << 16) | (sh2->m[5] & 0xffff);
 	case 0x06: // ICR
 		return sh2->icr << 16;
 
 	case 0x38: // ICR, IPRA
-//		return (sh2->m[0x38] & 0x7fffffff) | (sh2->nmi_line_state == ASSERT_LINE ? 0 : 0x80000000);
 		return (sh2->m[0x38] & 0x7fffffff) | 0x80000000;
 
 	case 0x78: // BCR1
-//		return sh2->is_slave ? 0x00008000 : 0;
 		return 0;
 
 	case 0x41: // dvdntl mirrors
@@ -3104,12 +3101,10 @@ int Sh2Run(int cycles)
 		UINT16 opcode;
 
 		if (sh2->delay) {
-			//opcode = cpu_readop16(WORD_XOR_BE((UINT32)(sh2->delay & AM)));
 			opcode = cpu_readop16(sh2->delay & AM);
 			change_pc(sh2->pc & AM);
 			sh2->delay = 0;
 		} else {
-			//opcode = cpu_readop16(WORD_XOR_BE((UINT32)(sh2->pc & AM)));
 			opcode = cpu_readop16(sh2->pc & AM);
 			sh2->pc += 2;
 		}
@@ -3171,12 +3166,10 @@ int Sh2Run(int cycles)
 		UINT16 opcode;
 
 		if (sh2->delay) {
-			//opcode = cpu_readop16(WORD_XOR_BE((UINT32)(sh2->delay & AM)));
 			opcode = cpu_readop16(sh2->delay & AM);
 			change_pc(sh2->pc & AM);
 			sh2->delay = 0;
 		} else {
-			//opcode = cpu_readop16(WORD_XOR_BE((UINT32)(sh2->pc & AM)));
 			opcode = cpu_readop16(sh2->pc & AM);
 			sh2->pc += 2;
 		}

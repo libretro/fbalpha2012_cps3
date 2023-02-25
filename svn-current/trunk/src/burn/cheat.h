@@ -42,14 +42,13 @@ void CheatExit();
 extern UINT32 CheatSearchShowResultAddresses[CHEATSEARCH_SHOWRESULTS];
 extern UINT32 CheatSearchShowResultValues[CHEATSEARCH_SHOWRESULTS];
 
-INT32 CheatSearchInit();
-void CheatSearchExit();
-void CheatSearchStart();
-UINT32 CheatSearchValueNoChange();
-UINT32 CheatSearchValueChange();
-UINT32 CheatSearchValueDecreased();
-UINT32 CheatSearchValueIncreased();
-void CheatSearchDumptoFile();
+INT32 CheatSearchInit(void);
+void CheatSearchExit(void);
+void CheatSearchStart(void);
+UINT32 CheatSearchValueNoChange(void);
+UINT32 CheatSearchValueChange(void);
+UINT32 CheatSearchValueDecreased(void);
+UINT32 CheatSearchValueIncreased(void);
 
 typedef void (*CheatSearchInitCallback)();
 extern CheatSearchInitCallback CheatSearchInitCallbackFunction;
