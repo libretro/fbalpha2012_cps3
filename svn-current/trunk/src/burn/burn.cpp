@@ -419,14 +419,6 @@ extern "C" INT32 BurnDrvGetVisibleSize(INT32* pnWidth, INT32* pnHeight)
 	return 0;
 }
 
-extern "C" INT32 BurnDrvGetVisibleOffs(INT32* pnLeft, INT32* pnTop)
-{
-	*pnLeft = 0;
-	*pnTop = 0;
-
-	return 0;
-}
-
 extern "C" INT32 BurnDrvGetFullSize(INT32* pnWidth, INT32* pnHeight)
 {
 	if (pDriver[nBurnDrvActive]->Flags & BDF_ORIENTATION_VERTICAL) {
@@ -480,12 +472,6 @@ extern "C" UINT32 BurnDrvGetHardwareCode()
 extern "C" INT32 BurnDrvGetFlags()
 {
 	return pDriver[nBurnDrvActive]->Flags;
-}
-
-// Return BDF_WORKING flag
-extern "C" bool BurnDrvIsWorking()
-{
-	return pDriver[nBurnDrvActive]->Flags & BDF_GAME_WORKING;
 }
 
 // Return max. number of players

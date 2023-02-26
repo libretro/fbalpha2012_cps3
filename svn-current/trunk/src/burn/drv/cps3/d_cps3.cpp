@@ -27,6 +27,8 @@
 
 #include "cps3.h"
 
+#define FBF_SF (1 << 1)
+
 static struct BurnInputInfo cps3InputList[] = {
 	{"P1 Coin",			BIT_DIGITAL,	Cps3But2 +  8,	"p1 coin"	},
 	{"P1 Start",		BIT_DIGITAL,	Cps3But2 + 12,	"p1 start"	},

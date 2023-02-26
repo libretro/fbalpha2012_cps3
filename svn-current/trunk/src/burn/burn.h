@@ -22,42 +22,6 @@
 
 extern TCHAR szAppHiscorePath[MAX_PATH];
 
-// Give access to the CPUID function for various compilers
-#if defined (__GNUC__)
- #define CPUID(f,ra,rb,rc,rd) __asm__ __volatile__ ("cpuid"											\
- 													: "=a" (ra), "=b" (rb), "=c" (rc), "=d" (rd)	\
- 													: "a"  (f)										\
- 												   );
-#elif defined (_MSC_VER)
- #define CPUID(f,ra,rb,rc,rd) __asm { __asm mov		eax, f		\
-									  __asm cpuid				\
-									  __asm mov		ra, eax		\
-									  __asm mov		rb, ebx		\
-									  __asm mov		rc, ecx		\
-									  __asm mov		rd, edx }
-#else
- #define CPUID(f,ra,rb,rc,rd)
-#endif
-
-#ifndef BUILD_X86_ASM
- #undef CPUID
- #define CPUID(f,ra,rb,rc,rd)
-#endif
-
-#ifdef _UNICODE
- #define SEPERATOR_1 " \u2022 "
- #define SEPERATOR_2 " \u25E6 "
-#else
- #define SEPERATOR_1 " ~ "
- #define SEPERATOR_2 " ~ "
-#endif
-
-#ifdef _UNICODE
- #define WRITE_UNICODE_BOM(file) { UINT16 BOM[] = { 0xFEFF }; fwrite(BOM, 2, 1, file); }
-#else
- #define WRITE_UNICODE_BOM(file)
-#endif
-
 typedef unsigned char						UINT8;
 typedef signed char 						INT8;
 typedef unsigned short						UINT16;
@@ -207,7 +171,6 @@ INT32 BurnUpdateProgress(double dProgressStep, const TCHAR* pszText, bool bAbs);
 #define DRV_NAME		 (0)
 #define DRV_DATE		 (1)
 #define DRV_FULLNAME	 (2)
-//#define DRV_MEDIUMNAME	 (3)
 #define DRV_COMMENT		 (4)
 #define DRV_MANUFACTURER (5)
 #define DRV_SYSTEM		 (6)
@@ -228,12 +191,10 @@ INT32 BurnDrvGetRomName(char** pszName, UINT32 i, INT32 nAka);
 INT32 BurnDrvGetInputInfo(struct BurnInputInfo* pii, UINT32 i);
 INT32 BurnDrvGetDIPInfo(struct BurnDIPInfo* pdi, UINT32 i);
 INT32 BurnDrvGetVisibleSize(INT32* pnWidth, INT32* pnHeight);
-INT32 BurnDrvGetVisibleOffs(INT32* pnLeft, INT32* pnTop);
 INT32 BurnDrvGetFullSize(INT32* pnWidth, INT32* pnHeight);
 INT32 BurnDrvGetAspect(INT32* pnXAspect, INT32* pnYAspect);
 UINT32 BurnDrvGetHardwareCode();
 INT32 BurnDrvGetFlags();
-bool BurnDrvIsWorking();
 INT32 BurnDrvGetMaxPlayers();
 INT32 BurnDrvSetVisibleSize(INT32 pnWidth, INT32 pnHeight);
 INT32 BurnDrvSetAspect(INT32 pnXAspect, INT32 pnYAspect);
@@ -252,139 +213,28 @@ void Reinitialise();
 #define BDF_BOARDROM (1 << 3)
 #define BDF_CLONE (1 << 4)
 #define BDF_BOOTLEG (1 << 5)
-#define BDF_PROTOTYPE									(1 << 6)
-#define BDF_16BIT_ONLY									(1 << 7)
-#define BDF_HACK										(1 << 8)
-#define BDF_HOMEBREW									(1 << 9)
-#define BDF_DEMO										(1 << 10)
-#define BDF_HISCORE_SUPPORTED							(1 << 11)
+#define BDF_PROTOTYPE (1 << 6)
+#define BDF_16BIT_ONLY (1 << 7)
+#define BDF_HACK (1 << 8)
+#define BDF_HOMEBREW (1 << 9)
+#define BDF_DEMO (1 << 10)
+#define BDF_HISCORE_SUPPORTED (1 << 11)
 
 // Flags for the hardware member
 // Format: 0xDDEEFFFF, where EE: Manufacturer, DD: Hardware platform, FFFF: Flags (used by driver)
 
-#define HARDWARE_PUBLIC_MASK							(0xFFFF0000)
+#define HARDWARE_PUBLIC_MASK (0xFFFF0000)
 
-#define HARDWARE_PREFIX_CARTRIDGE						(0x80000000)
+#define HARDWARE_PREFIX_CARTRIDGE (0x80000000)
 
-#define HARDWARE_PREFIX_MISC_PRE90S						(0x00000000)
-#define HARDWARE_PREFIX_CAPCOM							(0x01000000)
-#define HARDWARE_PREFIX_SEGA							(0x02000000)
-#define HARDWARE_PREFIX_KONAMI							(0x03000000)
-#define HARDWARE_PREFIX_TOAPLAN							(0x04000000)
-#define HARDWARE_PREFIX_SNK								(0x05000000)
-#define HARDWARE_PREFIX_CAVE							(0x06000000)
-#define HARDWARE_PREFIX_CPS2							(0x07000000)
-#define HARDWARE_PREFIX_IGS_PGM							(0x08000000)
-#define HARDWARE_PREFIX_CPS3							(0x09000000)
-#define HARDWARE_PREFIX_MISC_POST90S					(0x0a000000)
-#define HARDWARE_PREFIX_TAITO							(0x0b000000)
-#define HARDWARE_PREFIX_SEGA_MEGADRIVE					(0x0c000000)
-#define HARDWARE_PREFIX_PSIKYO							(0x0d000000)
-#define HARDWARE_PREFIX_KANEKO							(0x0e000000)
-#define HARDWARE_PREFIX_PACMAN							(0x0f000000)
-#define HARDWARE_PREFIX_GALAXIAN						(0x10000000)
-#define HARDWARE_PREFIX_IREM							(0x11000000)
-#define HARDWARE_PREFIX_NINTENDO_SNES					(0x12000000)
-#define HARDWARE_PREFIX_DATAEAST						(0x13000000)
-#define HARDWARE_PREFIX_CAPCOM_MISC						(0x14000000)
-#define HARDWARE_PREFIX_SETA							(0x15000000)
-#define HARDWARE_PREFIX_TECHNOS							(0x16000000)
-#define HARDWARE_PREFIX_PCENGINE						(0x17000000)
-#define HARDWARE_PREFIX_SEGA_MASTER_SYSTEM				(0x18000000)
+#define HARDWARE_PREFIX_CAPCOM (0x01000000)
+#define HARDWARE_PREFIX_CPS3 (0x09000000)
 
-#define HARDWARE_MISC_PRE90S							(HARDWARE_PREFIX_MISC_PRE90S)
-#define HARDWARE_MISC_POST90S							(HARDWARE_PREFIX_MISC_POST90S)
-
-#define HARDWARE_CAPCOM_CPS1							(HARDWARE_PREFIX_CAPCOM | 0x00010000)
-#define HARDWARE_CAPCOM_CPS1_QSOUND 					(HARDWARE_PREFIX_CAPCOM | 0x00020000)
-#define HARDWARE_CAPCOM_CPS1_GENERIC 					(HARDWARE_PREFIX_CAPCOM | 0x00030000)
-#define HARDWARE_CAPCOM_CPSCHANGER						(HARDWARE_PREFIX_CAPCOM | 0x00040000)
-#define HARDWARE_CAPCOM_CPS2							(HARDWARE_PREFIX_CPS2 | 0x00010000)
-#define HARDWARE_CAPCOM_CPS2_SIMM						(0x0002)
-
-#define HARDWARE_KONAMI_68K_Z80							(HARDWARE_PREFIX_KONAMI | 0x00010000)
-#define HARDWARE_KONAMI_68K_ONLY						(HARDWARE_PREFIX_KONAMI | 0x00020000)
-
-#define HARDWARE_TOAPLAN_RAIZING						(HARDWARE_PREFIX_TOAPLAN | 0x00010000)
-#define HARDWARE_TOAPLAN_68K_Zx80						(HARDWARE_PREFIX_TOAPLAN | 0x00020000)
-#define HARDWARE_TOAPLAN_68K_ONLY						(HARDWARE_PREFIX_TOAPLAN | 0x00030000)
-#define HARDWARE_TOAPLAN_MISC							(HARDWARE_PREFIX_TOAPLAN | 0x00040000)
-
-#define HARDWARE_CAVE_68K_ONLY							(HARDWARE_PREFIX_CAVE)
-#define HARDWARE_CAVE_68K_Z80							(HARDWARE_PREFIX_CAVE | 0x0001)
-#define HARDWARE_CAVE_M6295								(0x0002)
-#define HARDWARE_CAVE_YM2151							(0x0004)
-
-#define HARDWARE_IGS_PGM								(HARDWARE_PREFIX_IGS_PGM)
-#define HARDWARE_IGS_USE_ARM_CPU						(0x0001)
-
-#define HARDWARE_CAPCOM_CPS3							(HARDWARE_PREFIX_CPS3)
-#define HARDWARE_CAPCOM_CPS3_NO_CD   					(0x0001)
-
-#define HARDWARE_TAITO_TAITOZ							(HARDWARE_PREFIX_TAITO | 0x00010000)
-#define HARDWARE_TAITO_TAITOF2							(HARDWARE_PREFIX_TAITO | 0x00020000)
-#define HARDWARE_TAITO_MISC								(HARDWARE_PREFIX_TAITO | 0x00030000)
-#define HARDWARE_TAITO_TAITOX							(HARDWARE_PREFIX_TAITO | 0x00040000)
-#define HARDWARE_TAITO_TAITOB							(HARDWARE_PREFIX_TAITO | 0x00050000)
-
-#define HARDWARE_IREM_M62								(HARDWARE_PREFIX_IREM | 0x00010000)
-#define HARDWARE_IREM_M63								(HARDWARE_PREFIX_IREM | 0x00020000)
-#define HARDWARE_IREM_M72								(HARDWARE_PREFIX_IREM | 0x00030000)
-#define HARDWARE_IREM_M90								(HARDWARE_PREFIX_IREM | 0x00040000)
-#define HARDWARE_IREM_M92								(HARDWARE_PREFIX_IREM | 0x00050000)
-#define HARDWARE_IREM_MISC								(HARDWARE_PREFIX_IREM | 0x00060000)
-
-#define HARDWARE_PSIKYO									(HARDWARE_PREFIX_PSIKYO)
-
-#define HARDWARE_PACMAN									(HARDWARE_PREFIX_PACMAN)
-
-#define HARDWARE_GALAXIAN								(HARDWARE_PREFIX_GALAXIAN)
-
-#define HARDWARE_NINTENDO_SNES							(HARDWARE_PREFIX_NINTENDO_SNES)
-
-#define HARWARE_CAPCOM_MISC								(HARDWARE_PREFIX_CAPCOM_MISC)
-
-#define HARDWARE_SETA1									(HARDWARE_PREFIX_SETA | 0x10000)
-#define HARDWARE_SETA2									(HARDWARE_PREFIX_SETA | 0x10000)
-
-#define HARDWARE_TECHNOS								(HARDWARE_PREFIX_TECHNOS)
-
-#define HARDWARE_PCENGINE_PCENGINE						(HARDWARE_PREFIX_PCENGINE | 0x00010000)
-#define HARDWARE_PCENGINE_TG16							(HARDWARE_PREFIX_PCENGINE | 0x00020000)
-#define HARDWARE_PCENGINE_SGX							(HARDWARE_PREFIX_PCENGINE | 0x00030000)
+#define HARDWARE_CAPCOM_CPS3 (HARDWARE_PREFIX_CPS3)
+#define HARDWARE_CAPCOM_CPS3_NO_CD (0x0001)
 
 // flags for the genre member
-#define GBF_HORSHOOT									(1 << 0)
-#define GBF_VERSHOOT									(1 << 1)
-#define GBF_SCRFIGHT									(1 << 2)
-#define GBF_VSFIGHT										(1 << 3)
-#define GBF_BIOS										(1 << 4)
-#define GBF_BREAKOUT									(1 << 5)
-#define GBF_CASINO										(1 << 6)
-#define GBF_BALLPADDLE									(1 << 7)
-#define GBF_MAZE										(1 << 8)
-#define GBF_MINIGAMES									(1 << 9)
-#define GBF_PINBALL										(1 << 10)
-#define GBF_PLATFORM									(1 << 11)
-#define GBF_PUZZLE										(1 << 12)
-#define GBF_QUIZ										(1 << 13)
-#define GBF_SPORTSMISC									(1 << 14)
-#define GBF_SPORTSFOOTBALL								(1 << 15)
-#define GBF_MISC										(1 << 16)
-#define GBF_MAHJONG										(1 << 17)
-#define GBF_RACING										(1 << 18)
-#define GBF_SHOOT										(1 << 19)
-
-// flags for the family member
-#define FBF_MSLUG										(1 << 0)
-#define FBF_SF											(1 << 1)
-#define FBF_KOF											(1 << 2)
-#define FBF_DSTLK										(1 << 3)
-#define FBF_FATFURY										(1 << 4)
-#define FBF_SAMSHO										(1 << 5)
-#define FBF_19XX										(1 << 6)
-#define FBF_SONICWI										(1 << 7)
-#define FBF_PWRINST										(1 << 8)
+#define GBF_VSFIGHT (1 << 3)
 
 #ifdef __cplusplus
  } // End of extern "C"
