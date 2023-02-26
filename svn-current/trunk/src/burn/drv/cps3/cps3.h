@@ -1,11 +1,11 @@
 #include "burnint.h"
 
 #ifndef HARDWARE_CAPCOM_CPS3
-	#define HARDWARE_CAPCOM_CPS3		HARDWARE_MISC_MISC
+#define HARDWARE_CAPCOM_CPS3		HARDWARE_MISC_MISC
 #endif
 
 #ifndef HARDWARE_CAPCOM_CPS3_NO_CD
-	#define HARDWARE_CAPCOM_CPS3_NO_CD	HARDWARE_CAPCOM_CPS3
+#define HARDWARE_CAPCOM_CPS3_NO_CD	HARDWARE_CAPCOM_CPS3
 #endif
 
 extern UINT8 cps3_reset;
@@ -23,9 +23,9 @@ extern UINT8 Cps3But1[16];
 extern UINT8 Cps3But2[16];
 extern UINT8 Cps3But3[16];
 
-INT32 cps3Init();
-INT32 cps3Exit();
-INT32 cps3Frame();
+INT32 cps3Init(void);
+INT32 cps3Exit(void);
+INT32 cps3Frame(void);
 INT32 cps3Scan(INT32 nAction,INT32 *pnMin);
 
 // sound 
@@ -40,9 +40,8 @@ void __fastcall cps3SndWriteLong(UINT32 addr, UINT32 data);
 
 INT32 cps3SndInit(UINT8 *);
 void cps3SndSetRoute(INT32 nIndex, double nVolume, INT32 nRouteDir);
-void cps3SndReset();
-void cps3SndExit();
-void cps3SndUpdate();
+void cps3SndExit(void);
+void cps3SndUpdate(void);
 
 INT32 cps3SndScan(INT32);
 

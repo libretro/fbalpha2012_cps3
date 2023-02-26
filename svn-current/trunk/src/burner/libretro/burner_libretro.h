@@ -6,7 +6,6 @@
 
 #ifdef _MSC_VER
 #define snprintf _snprintf
-#define ANSIToTCHAR(str, foo, bar) (str)
 #endif
 
 extern void InpDIPSWResetDIPs (void);

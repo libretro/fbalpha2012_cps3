@@ -7,13 +7,15 @@
 #define CPS3_SND_BUFFER_SIZE	(CPS3_SND_RATE / CPS3_SND_INT_RATE)
 #define CPS3_SND_LINEAR_SHIFT	12
 
-typedef struct {
+typedef struct
+{
 	UINT16 regs[16];
 	UINT32 pos;
 	UINT16 frac;
 } cps3_voice;
 
-typedef struct {
+typedef struct
+{
 	cps3_voice voice[CPS3_VOICES];
 	UINT16 key;
 
@@ -64,9 +66,11 @@ void __fastcall cps3SndWriteWord(UINT32 addr, UINT16 data)
 	if (addr == 0x200)
 	{
 		UINT16 key = data;
-		for (INT32 i = 0; i < CPS3_VOICES; i++) {
+		for (INT32 i = 0; i < CPS3_VOICES; i++)
+      {
 			// Key off -> Key on
-			if ((key & (1 << i)) && !(chip->key & (1 << i)))	{
+			if ((key & (1 << i)) && !(chip->key & (1 << i)))
+         {
 				chip->voice[i].frac = 0;
 				chip->voice[i].pos = 0;
 			}
@@ -80,7 +84,8 @@ void __fastcall cps3SndWriteLong(UINT32 addr, UINT32 data) { }
 INT32 cps3SndInit(UINT8 * sndrom)
 {
 	chip = (cps3snd_chip *)BurnMalloc( sizeof(cps3snd_chip) );
-	if ( chip ) {
+	if ( chip )
+   {
 		memset( chip, 0, sizeof(cps3snd_chip) );
 		chip->rombase = sndrom;
 		
@@ -108,7 +113,6 @@ void cps3SndSetRoute(INT32 nIndex, double nVolume, INT32 nRouteDir)
 	chip->output_dir[nIndex] = nRouteDir;
 }
 
-void cps3SndReset(void) { }
 void cps3SndExit(void) { BurnFree(chip); }
 
 void cps3SndUpdate(void)
@@ -120,71 +124,72 @@ void cps3SndUpdate(void)
 	INT8 * base = (INT8 *)chip->rombase;
 	cps3_voice *vptr = &chip->voice[0];
 
-	for(INT32 i=0; i<CPS3_VOICES; i++, vptr++) {
-		if (chip->key & (1 << i)) {
-			
-			UINT32 start = ((vptr->regs[ 3] << 16) | vptr->regs[ 2]) - 0x400000;
-			UINT32 end   = ((vptr->regs[11] << 16) | vptr->regs[10]) - 0x400000;
-			UINT32 loop  = ((vptr->regs[ 9] << 16) | vptr->regs[ 7]) - 0x400000;
-			UINT32 step  = ( vptr->regs[ 6] * chip->delta ) >> CPS3_SND_LINEAR_SHIFT;
+	for(INT32 i=0; i<CPS3_VOICES; i++, vptr++)
+   {
+      if (chip->key & (1 << i))
+      {
+         UINT32 start   = ((vptr->regs[ 3] << 16) | vptr->regs[ 2]) - 0x400000;
+         UINT32 end     = ((vptr->regs[11] << 16) | vptr->regs[10]) - 0x400000;
+         UINT32 loop    = ((vptr->regs[ 9] << 16) | vptr->regs[ 7]) - 0x400000;
+         UINT32 step    = ( vptr->regs[ 6] * chip->delta ) >> CPS3_SND_LINEAR_SHIFT;
 
-			INT32 vol_l = (INT16)vptr->regs[15];
-			INT32 vol_r = (INT16)vptr->regs[14];
+         INT32 vol_l    = (INT16)vptr->regs[15];
+         INT32 vol_r    = (INT16)vptr->regs[14];
 
-			UINT32 pos     = vptr->pos;
-			UINT32 frac    = vptr->frac;
-			
-			/* Go through the buffer and add voice contributions */
-			INT16 * buffer = (INT16 *)pBurnSoundOut;
+         UINT32 pos     = vptr->pos;
+         UINT32 frac    = vptr->frac;
 
-			for (INT32 j=0; j<nBurnSoundLen; j++) {
-				INT32 sample;
+         /* Go through the buffer and add voice contributions */
+         INT16 * buffer = (INT16 *)pBurnSoundOut;
 
-				pos += (frac >> 12);
-				frac &= 0xfff;
+         for (INT32 j=0; j<nBurnSoundLen; j++)
+         {
+            INT32 sample;
 
-				if (start + pos >= end)
-				{
-					if (vptr->regs[5])
-						pos = loop - start;
-					else
-					{
-						chip->key &= ~(1 << i);
-						break;
-					}
-				}
+            pos += (frac >> 12);
+            frac &= 0xfff;
 
-				// 8bit sample store with 16bit bigend ???
-				sample = base[(start + pos) ^ 1];
-				frac += step;
+            if (start + pos >= end)
+            {
+               if (vptr->regs[5])
+                  pos = loop - start;
+               else
+               {
+                  chip->key &= ~(1 << i);
+                  break;
+               }
+            }
 
-				INT32 nLeftSample = 0, nRightSample = 0;
-				
-				if ((chip->output_dir[BURN_SND_CPS3SND_ROUTE_1] & BURN_SND_ROUTE_LEFT) == BURN_SND_ROUTE_LEFT)
-					nLeftSample += (INT32)(((sample * vol_l) >> 8) * chip->gain[BURN_SND_CPS3SND_ROUTE_1]);
-				if ((chip->output_dir[BURN_SND_CPS3SND_ROUTE_1] & BURN_SND_ROUTE_RIGHT) == BURN_SND_ROUTE_RIGHT)
-					nRightSample += (INT32)(((sample * vol_l) >> 8) * chip->gain[BURN_SND_CPS3SND_ROUTE_1]);
-				
-				if ((chip->output_dir[BURN_SND_CPS3SND_ROUTE_2] & BURN_SND_ROUTE_LEFT) == BURN_SND_ROUTE_LEFT)
-					nLeftSample += (INT32)(((sample * vol_r) >> 8) * chip->gain[BURN_SND_CPS3SND_ROUTE_2]);
-				if ((chip->output_dir[BURN_SND_CPS3SND_ROUTE_2] & BURN_SND_ROUTE_RIGHT) == BURN_SND_ROUTE_RIGHT)
-					nRightSample += (INT32)(((sample * vol_r) >> 8) * chip->gain[BURN_SND_CPS3SND_ROUTE_2]);
+            // 8bit sample store with 16bit bigend ???
+            sample = base[(start + pos) ^ 1];
+            frac += step;
 
-				nLeftSample = BURN_SND_CLIP(nLeftSample + buffer[1]);
-				nRightSample = BURN_SND_CLIP(nRightSample + buffer[0]);
-				
-				buffer[0] = nRightSample; // swapped. correct??
-				buffer[1] = nLeftSample;
+            INT32 nLeftSample = 0, nRightSample = 0;
 
-				buffer += 2;
-			}
+            if ((chip->output_dir[BURN_SND_CPS3SND_ROUTE_1] & BURN_SND_ROUTE_LEFT) == BURN_SND_ROUTE_LEFT)
+               nLeftSample += (INT32)(((sample * vol_l) >> 8) * chip->gain[BURN_SND_CPS3SND_ROUTE_1]);
+            if ((chip->output_dir[BURN_SND_CPS3SND_ROUTE_1] & BURN_SND_ROUTE_RIGHT) == BURN_SND_ROUTE_RIGHT)
+               nRightSample += (INT32)(((sample * vol_l) >> 8) * chip->gain[BURN_SND_CPS3SND_ROUTE_1]);
+
+            if ((chip->output_dir[BURN_SND_CPS3SND_ROUTE_2] & BURN_SND_ROUTE_LEFT) == BURN_SND_ROUTE_LEFT)
+               nLeftSample += (INT32)(((sample * vol_r) >> 8) * chip->gain[BURN_SND_CPS3SND_ROUTE_2]);
+            if ((chip->output_dir[BURN_SND_CPS3SND_ROUTE_2] & BURN_SND_ROUTE_RIGHT) == BURN_SND_ROUTE_RIGHT)
+               nRightSample += (INT32)(((sample * vol_r) >> 8) * chip->gain[BURN_SND_CPS3SND_ROUTE_2]);
+
+            nLeftSample  = BURN_SND_CLIP(nLeftSample + buffer[1]);
+            nRightSample = BURN_SND_CLIP(nRightSample + buffer[0]);
+
+            buffer[0]    = nRightSample; // swapped. correct??
+            buffer[1]    = nLeftSample;
+
+            buffer      += 2;
+         }
 
 
-			vptr->pos = pos;
-			vptr->frac = frac;
-		}
-	}
-	
+         vptr->pos = pos;
+         vptr->frac = frac;
+      }
+   }
 }
 
 INT32 cps3SndScan(INT32 nAction)

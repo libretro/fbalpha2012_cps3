@@ -79,10 +79,10 @@ static void GameInpInitMacros(void)
 	{
 		bii.szName = NULL;
 		BurnDrvGetInputInfo(&bii, i);
-		if (bii.szName == NULL) {
+		if (bii.szName == NULL)
 			bii.szName = "";
-		}
-		if (bii.szName[0] == 'P' && bii.szName[1] >= '1' && bii.szName[1] <= '4') {
+		if (bii.szName[0] == 'P' && bii.szName[1] >= '1' && bii.szName[1] <= '4')
+		{
 			INT32 nPlayer = bii.szName[1] - '1';
 
 			if (nPlayer == 0)
@@ -122,13 +122,16 @@ static void GameInpInitMacros(void)
 
 	for (INT32 nPlayer = 0; nPlayer < nMaxPlayers; nPlayer++)
 	{
-		if (nPunchx3[nPlayer] == 7) {		// Create a 3x punch macro
-			pgi->nInput = GIT_MACRO_AUTO;
-			pgi->nType = BIT_DIGITAL;
+		if (nPunchx3[nPlayer] == 7)
+		{ 
+			// Create a 3x punch macro
+			pgi->nInput      = GIT_MACRO_AUTO;
+			pgi->nType       = BIT_DIGITAL;
 			pgi->Macro.nMode = 0;
 
 			sprintf(pgi->Macro.szName, "P%i 3× Punch", nPlayer + 1);
-			for (INT32 j = 0; j < 3; j++) {
+			for (INT32 j = 0; j < 3; j++)
+			{
 				BurnDrvGetInputInfo(&bii, nPunchInputs[nPlayer][j]);
 				pgi->Macro.pVal[j] = bii.pVal;
 				pgi->Macro.nVal[j] = 1;
@@ -169,9 +172,9 @@ INT32 GameInpInit(void)
 
 	for (UINT32 i = 0; i < 0x1000; i++)
 	{
-		nRet = BurnDrvGetInputInfo(NULL,i);
-		if (nRet)
-		{ // end of input list
+		if ((nRet = BurnDrvGetInputInfo(NULL,i)))
+		{
+			// end of input list
 			nGameInpCount = i;
 			break;
 		}
@@ -272,7 +275,8 @@ INT32 GameInpDefault(void)
 	nAnalogSpeed = 0x0100;
 
 	// Fill all inputs still undefined
-	for (i = 0, pgi = GameInp; i < nGameInpCount; i++, pgi++) {
+	for (i = 0, pgi = GameInp; i < nGameInpCount; i++, pgi++)
+	{
 		if (pgi->nInput) // Already defined - leave it alone
 			continue;
 

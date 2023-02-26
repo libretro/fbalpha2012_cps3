@@ -500,32 +500,6 @@ extern "C" INT32 BurnDrvInit()
 	if (nBurnDrvActive >= nBurnDrvCount)
 		return 1;
 
-#if defined (FBA_DEBUG)
-	{
-		TCHAR szText[1024] = _T("");
-		TCHAR* pszPosition = szText;
-		TCHAR* pszName = BurnDrvGetText(DRV_FULLNAME);
-		INT32 nName = 1;
-
-		while ((pszName = BurnDrvGetText(DRV_NEXTNAME | DRV_FULLNAME)) != NULL) {
-			nName++;
-		}
-
-		// Then print the alternative titles
-
-		if (nName > 1) {
-			pszName = BurnDrvGetText(DRV_FULLNAME);
-			nName = 1;
-			while ((pszName = BurnDrvGetText(DRV_NEXTNAME | DRV_FULLNAME)) != NULL) {
-				if (pszPosition + _tcslen(pszName) - 1022 > szText) {
-					break;
-				}
-				nName++;
-			}
-		}
-	}
-#endif
-
 	BurnSetRefreshRate(60.0);
 
 	CheatInit();
@@ -537,11 +511,6 @@ extern "C" INT32 BurnDrvInit()
 
 	nMaxPlayers = pDriver[nBurnDrvActive]->Players;
 	
-#if defined (FBA_DEBUG)
-	if (!nReturnValue)
-		nCurrentFrame = 0;
-#endif
-
 	return nReturnValue;
 }
 

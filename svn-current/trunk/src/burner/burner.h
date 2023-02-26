@@ -60,9 +60,7 @@ INT32 GamcPlayer(struct GameInp* pgi, char* szi, INT32 nPlayer, INT32 nDevice);
 INT32 GamcPlayerHotRod(struct GameInp* pgi, char* szi, INT32 nPlayer, INT32 nFlags, INT32 nSlide);
 
 // state.cpp
-INT32 BurnStateLoadEmbed(FILE* fp, INT32 nOffset, INT32 bAll, INT32 (*pLoadGame)());
 INT32 BurnStateLoad(TCHAR* szName, INT32 bAll, INT32 (*pLoadGame)());
-INT32 BurnStateSaveEmbed(FILE* fp, INT32 nOffset, INT32 bAll);
 INT32 BurnStateSave(TCHAR* szName, INT32 bAll);
 
 // statec.cpp
@@ -76,17 +74,5 @@ INT32 ZipOpen(char* szZip);
 INT32 ZipClose();
 INT32 ZipGetList(struct ZipEntry** pList, INT32* pnListCount);
 INT32 ZipLoadFile(UINT8* Dest, INT32 nLen, INT32* pnWrote, INT32 nEntry);
-
-// bzip.cpp
-
-#define BZIP_STATUS_OK		(0)
-#define BZIP_STATUS_BADDATA	(1)
-#define BZIP_STATUS_ERROR	(2)
-
-INT32 BzipOpen(bool);
-INT32 BzipClose();
-INT32 BzipInit();
-INT32 BzipExit();
-INT32 BzipStatus();
 
 #endif

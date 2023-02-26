@@ -37,7 +37,7 @@ static INT32 StateInfo(INT32* pnLen, INT32* pnMinVer, INT32 bAll)
 }
 
 // State load
-INT32 BurnStateLoadEmbed(FILE* fp, INT32 nOffset, INT32 bAll, INT32 (*pLoadGame)())
+static INT32 BurnStateLoadEmbed(FILE* fp, INT32 nOffset, INT32 bAll, INT32 (*pLoadGame)())
 {
 	char ReadHeader[4];
 	char szForName[33];
@@ -160,8 +160,8 @@ INT32 BurnStateLoad(TCHAR* szName, INT32 bAll, INT32 (*pLoadGame)())
 	const char szHeader[] = "FB1 "; // File identifier
 	char szReadHeader[4] = "";
 	INT32 nRet = 0;
-	FILE* fp = _tfopen(szName, _T("rb"));
-	if (fp == NULL)
+	FILE* fp   = fopen(szName, "rb");
+	if (!fp)
 		return 1;
 
 	fread(szReadHeader, 1, 4, fp); // Read identifier
@@ -178,7 +178,7 @@ INT32 BurnStateLoad(TCHAR* szName, INT32 bAll, INT32 (*pLoadGame)())
 // nOffset is the absolute offset from the beginning of the file
 // -1: Append at current position
 // -2: Append at EOF
-INT32 BurnStateSaveEmbed(FILE* fp, INT32 nOffset, INT32 bAll)
+static INT32 BurnStateSaveEmbed(FILE* fp, INT32 nOffset, INT32 bAll)
 {
 	const char* szHeader = "FS1 "; // Chunk identifier
 	INT32 nLen = 0;
@@ -276,7 +276,7 @@ INT32 BurnStateSave(TCHAR* szName, INT32 bAll)
 	if (nLen <= 0) // No data, so exit without creating a savestate
 		return 0;
 
-	if (!(fp = _tfopen(szName, _T("wb"))))
+	if (!(fp = fopen(szName, "wb")))
 		return 1;
 
 	fwrite(&szHeader, 1, 4, fp);

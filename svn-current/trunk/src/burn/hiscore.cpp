@@ -115,7 +115,7 @@ void HiscoreInit(void)
 #endif
 	snprintf(szDatFilename, sizeof(szDatFilename), "%s%chiscore.dat", g_save_dir, slash);
 
-	if ((fp = _tfopen(szDatFilename, _T("r"))))
+	if ((fp = fopen(szDatFilename, "r")))
 	{
 		char buffer[MAX_CONFIG_LINE_SIZE];
 		enum { FIND_NAME, FIND_DATA, FETCH_DATA } mode;
@@ -163,8 +163,7 @@ void HiscoreInit(void)
 	
 	snprintf(szFilename, sizeof(szFilename), "%s%c%s.hi", g_save_dir, slash, BurnDrvGetText(DRV_NAME));
 
-	fp = _tfopen(szFilename, _T("r"));
-	if (fp)
+	if ((fp = fopen(szFilename, "r")))
 	{
 		UINT32 nSize = 0;
 		
@@ -280,20 +279,22 @@ void HiscoreExit(void)
 #endif
 	snprintf(szFilename, sizeof(szFilename), "%s%c%s.hi", g_save_dir, slash, BurnDrvGetText(DRV_NAME));
 
-	FILE *fp = _tfopen(szFilename, _T("w"));
-	if (fp) {
-		for (UINT32 i = 0; i < nHiscoreNumRanges; i++) {
+	FILE *fp = fopen(szFilename, "w");
+	if (fp)
+	{
+		for (UINT32 i = 0; i < nHiscoreNumRanges; i++)
+		{
 			UINT8 *Buffer = (UINT8*)malloc(HiscoreMemRange[i].NumBytes);
 			
 			cpu_open(HiscoreMemRange[i].nCpu);
-			for (UINT32 j = 0; j < HiscoreMemRange[i].NumBytes; j++) {
+			for (UINT32 j = 0; j < HiscoreMemRange[i].NumBytes; j++)
 				Buffer[j] = cpu_read_byte(HiscoreMemRange[i].Address + j);
-			}
 			cpu_close();
 			
 			fwrite(Buffer, 1, HiscoreMemRange[i].NumBytes, fp);
 			
-			if (Buffer) {
+			if (Buffer)
+			{
 				free(Buffer);
 				Buffer = NULL;
 			}
